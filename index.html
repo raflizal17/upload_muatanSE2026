@@ -490,7 +490,7 @@
         
         <div class="important-note">
             <strong>⚠️ PENTING:</strong> Setelah validasi lolos, Anda harus <strong>MENGUNDUH file hasil validasi (format Excel)</strong> terlebih dahulu. 
-            File unduhan inilah yang harus diunggah ke folder pusat. File asli Anda TIDAK akan diunggah secara otomatis.
+            File unduhan inilah yang harus diunggah ke folder pusat.
         </div>
         
         <div class="button-group">
@@ -537,7 +537,7 @@
             <div class="important-note" style="margin-bottom: 25px;">
                 <strong>📌 PERHATIAN!</strong><br>
                 File yang harus diunggah ke folder pusat adalah <span class="highlight">FILE HASIL UNDUHAN (Excel)</span> di bawah ini, 
-                <strong>BUKAN file asli Anda</strong>. File unduhan sudah diperbaiki dan disesuaikan dengan standar BPS.
+                <strong>BUKAN file pengecekan</strong>.
             </div>
             
             <p style="margin-bottom: 15px; font-size: 16px;">
@@ -563,8 +563,13 @@
             <p style="margin-top: 20px; font-size: 13px; color: #666;">
                 Nama file yang harus diunggah: <code id="outputFileName"></code>
             </p>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #f0f7ff; border-radius: 12px; text-align: left;">
+                <strong>📁 Struktur Folder Upload:</strong><br>
+                <code style="background: #e0e0e0; padding: 2px 8px; border-radius: 4px;">/SE2026/{kode_provinsi}/{kode_kabupaten}/</code><br>
+                <small style="color: #666;">Contoh: Untuk Kabupaten Bogor (3201), unggah ke folder: <code>/SE2026/32/3201/</code></small>
+            </div>
         </div>
-        
         <div class="upload-status" id="uploadStatus"></div>
     </div>
     
@@ -1498,8 +1503,8 @@ function displayValidationResults() {
             <div class="number">${v.typeCheck.passed ? '✓' : '✗'}</div>
             <div class="label">Tipe Data</div>
         </div>
-        <div class="summary-card ${v.anomalyCheck.passed ? 'success' : 'warning'}">
-            <div class="number">${v.anomalyCheck.passed ? '✓' : '⚠'}</div>
+        <div class="summary-card ${v.anomalyCheck.passed ? 'success' : 'error'}">
+            <div class="number">${v.anomalyCheck.passed ? '✓' : '✗'}</div>
             <div class="label">Anomali</div>
         </div>
     `;
@@ -1551,23 +1556,26 @@ function displayValidationResults() {
     // Anomaly check details
     let anomalyHtml = '';
     if (v.anomalyCheck.errors.length > 0) {
-        anomalyHtml += `<div class="result-item error"><strong>Error Anomali:</strong><br>${v.anomalyCheck.errors.join('<br>')}</div>`;
+        anomalyHtml += `<div class="result-item error"><strong>❌ Error Anomali (harus diperbaiki):</strong><br>${v.anomalyCheck.errors.join('<br>')}</div>`;
     }
     if (v.anomalyCheck.warnings.length > 0) {
-        anomalyHtml += `<div class="result-item warning"><strong>Warning Anomali:</strong><br>${v.anomalyCheck.warnings.slice(0, 5).join('<br>')}</div>`;
+        anomalyHtml += `<div class="result-item warning"><strong>⚠️ Warning Anomali (tidak menggagalkan):</strong><br>${v.anomalyCheck.warnings.slice(0, 5).join('<br>')}</div>`;
         if (v.anomalyCheck.warnings.length > 5) {
             anomalyHtml += `<div>... dan ${v.anomalyCheck.warnings.length - 5} warning lainnya</div>`;
         }
     }
     if (v.anomalyCheck.details && v.anomalyCheck.details.length > 0) {
         const showDetails = v.anomalyCheck.details.slice(0, 5);
-        anomalyHtml += `<div class="result-item warning"><strong>Detail Anomali:</strong><br>${showDetails.join('<br>')}</div>`;
+        anomalyHtml += `<div class="result-item error"><strong>Detail Error Anomali:</strong><br>${showDetails.join('<br>')}</div>`;
+        if (v.anomalyCheck.details.length > 5) {
+            anomalyHtml += `<div>... dan ${v.anomalyCheck.details.length - 5} error lainnya</div>`;
+        }
     }
     if (v.anomalyCheck.passed) {
-        anomalyHtml += `<div class="result-item success">✓ Tidak ada anomali data yang terdeteksi</div>`;
+        anomalyHtml += `<div class="result-item success">✅ Tidak ada anomali data yang terdeteksi</div>`;
     }
     
-    // Tambahkan anomali details ke dataTypeCheckResult atau buat section baru
+    // Tambahkan anomali details ke dataTypeCheckResult
     document.getElementById('dataTypeCheckDetails').innerHTML += `
         <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ffe0c0;">
             <h4 style="margin-bottom: 10px; color: #c14200;">Validasi Anomali Data</h4>
@@ -1578,20 +1586,22 @@ function displayValidationResults() {
     displayMetadata();
 }
     
-    // ==================== ACTION FUNCTIONS ====================
     function openUploadFolder() {
         window.open(FOLDER_UPLOAD_URL, '_blank');
         
         const uploadStatus = document.getElementById('uploadStatus');
+        const kodeProv = selectedKodeKab.substring(0, 2);
+        
         uploadStatus.style.display = 'block';
         uploadStatus.innerHTML = `
             <div class="result-box info">
                 <strong>✅ Folder upload telah dibuka di tab baru.</strong><br><br>
-                Silakan unggah file <code>${selectedKodeKab}_muatan_validated.xlsx</code> yang sudah Anda unduh ke folder tersebut.<br><br>
+                Silakan unggah file <code>${selectedKodeKab}_muatan_validated.xlsx</code> ke folder:<br>
+                <code style="background: #e0e0e0; padding: 4px 10px; border-radius: 4px; display: inline-block; margin: 10px 0;">/SE2026/${kodeProv}/${selectedKodeKab}/</code><br><br>
                 <small style="color: #666;">Jika tab tidak terbuka, <a href="${FOLDER_UPLOAD_URL}" target="_blank">klik di sini</a>.</small>
             </div>
         `;
-    }
+    }    
     
     function downloadValidatedFile() {
         if (!downloadBlob) return;
@@ -1683,8 +1693,8 @@ async function processFile() {
         
         document.getElementById('progressFill').style.width = '100%';
         
-        validationPassed = kodeCheck.passed && fileCheck.passed && varCheck.passed && typeCheck.passed;
-        // Anomali tidak menggagalkan validasi, hanya warning
+        // PERBAIKAN: Error anomali juga menggagalkan validasi
+        validationPassed = kodeCheck.passed && fileCheck.passed && varCheck.passed && typeCheck.passed && anomalyCheck.passed;
         
         document.getElementById('loadingIndicator').style.display = 'none';
         document.getElementById('resultSection').style.display = 'block';
@@ -1697,13 +1707,15 @@ async function processFile() {
             
             const recordCount = correctedData.length - 1;
             let statusMessage = `✅ Validasi BERHASIL! ${recordCount} baris data.`;
-            if (!anomalyCheck.passed) {
-                statusMessage += ` Terdapat ${anomalyCheck.errors.length} anomali (warning).`;
-            }
             document.getElementById('uploadStatus').innerHTML = `<div class="result-box success">${statusMessage} Silakan ikuti langkah di bawah ini.</div>`;
         } else {
             document.getElementById('actionBox').style.display = 'none';
-            document.getElementById('uploadStatus').innerHTML = `<div class="result-box error">❌ Validasi GAGAL. Perbaiki error sebelum melanjutkan.</div>`;
+            
+            let errorMessage = '❌ Validasi GAGAL. Perbaiki error sebelum melanjutkan.';
+            if (!anomalyCheck.passed) {
+                errorMessage += `<br><br>⚠️ Terdapat ${anomalyCheck.errors.length} anomali data yang harus diperbaiki.`;
+            }
+            document.getElementById('uploadStatus').innerHTML = `<div class="result-box error">${errorMessage}</div>`;
         }
         document.getElementById('uploadStatus').style.display = 'block';
         
