@@ -1578,7 +1578,7 @@ function displayValidationResults() {
     // Anomaly check details
     let anomalyHtml = '';
     if (v.anomalyCheck.errors.length > 0) {
-        anomalyHtml += `<div class="result-item error"><strong>❌ Error Anomali (${v.anomalyCheck.errorCount} baris - harus diperbaiki):</strong><br>${v.anomalyCheck.errors.join('<br>')}</div>`;
+        anomalyHtml += `<div class="result-item error"><strong>❌ Error Anomali (${v.anomalyCheck.errorCount} baris data - harus diperbaiki):</strong><br>${v.anomalyCheck.errors.join('<br>')}</div>`;
     }
     if (v.anomalyCheck.warnings.length > 0) {
         const displayWarnings = v.anomalyCheck.warnings.slice(0, 5);
