@@ -49,7 +49,7 @@
             text-align: center;
             color: #c14200;
             margin: 10px 0 8px;
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 700;
         }
         
@@ -209,6 +209,16 @@
             color: #3b2a1f;
         }
         
+        .btn-download {
+            background: linear-gradient(95deg, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(52, 152, 219, 0.3);
+        }
+        
         button:disabled {
             opacity: 0.5;
             transform: none;
@@ -235,21 +245,21 @@
         
         .validation-summary {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 18px;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 15px;
             margin-bottom: 25px;
         }
         
         .summary-card {
             background: #fffef7;
-            padding: 18px 8px;
+            padding: 18px 5px;
             border-radius: 28px;
             text-align: center;
             border: 1px solid #ffe0c0;
         }
         
         .summary-card .number {
-            font-size: 2.4rem;
+            font-size: 2rem;
             font-weight: 800;
             margin-bottom: 6px;
         }
@@ -354,9 +364,9 @@
             font-weight: 800;
             background: linear-gradient(135deg, #f79039 0%, #e06d1a 100%);
             color: white;
-            padding: 12px 30px;
+            padding: 10px 25px;
             border-radius: 50px;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             letter-spacing: 2px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
             box-shadow: 0 4px 15px rgba(247,144,57,0.4);
@@ -364,15 +374,49 @@
             border: 2px solid #fff3e0;
         }
         
-        .download-section {
+        .action-box {
+            background: linear-gradient(135deg, #fff8e1 0%, #fff3e0 100%);
+            padding: 25px;
+            border-radius: 20px;
             margin-top: 20px;
             text-align: center;
+            border: 2px dashed #f79039;
         }
         
-        .btn-download {
-            background: linear-gradient(95deg, #3498db, #2980b9);
+        .action-box h3 {
+            color: #c14200;
+            margin-bottom: 15px;
+        }
+        
+        .action-box .highlight {
+            background: #2c7a4d;
             color: white;
-            margin-right: 10px;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-weight: 700;
+            display: inline-block;
+            margin: 0 5px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .important-note {
+            background: #ffecb3;
+            border-left: 4px solid #ff8f00;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        
+        .important-note strong {
+            color: #e65100;
         }
         
         footer {
@@ -384,6 +428,7 @@
         
         @media (max-width: 700px) {
             .container { padding: 20px; }
+            h1 { font-size: 1.5rem; }
         }
     </style>
     <!-- Library -->
@@ -443,14 +488,14 @@
             </select>
         </div>
         
-        <div class="upload-info">
-            <strong>Informasi:</strong> Setelah file lolos validasi, Anda dapat mengunduh file hasil validasi dan mengunggahnya secara manual ke folder pusat melalui tombol yang tersedia.
+        <div class="important-note">
+            <strong>⚠️ PENTING:</strong> Setelah validasi lolos, Anda harus <strong>MENGUNDUH file hasil validasi (format Excel)</strong> terlebih dahulu. 
+            File unduhan inilah yang harus diunggah ke folder pusat. File asli Anda TIDAK akan diunggah secara otomatis.
         </div>
         
         <div class="button-group">
-            <button class="btn-primary" id="validateButton">Validasi File</button>
-            <button class="btn-success" id="uploadButton" disabled>Buka Folder Upload</button>
-            <button class="btn-secondary" id="resetButton">Reset</button>
+            <button class="btn-primary" id="validateButton">🔍 Validasi File</button>
+            <button class="btn-secondary" id="resetButton">🔄 Reset</button>
         </div>
     </div>
     
@@ -485,9 +530,39 @@
             <div id="metadataDetails"></div>
         </div>
         
-        <div class="download-section" id="downloadSection" style="display: none;">
-            <button class="btn-download" id="downloadButton">Unduh File Hasil Validasi</button>
-            <p style="margin-top: 10px; font-size: 13px; color: #666;">Unduh file Excel yang sudah divalidasi, lalu unggah ke folder pusat.</p>
+        <!-- Action Box untuk hasil validasi lolos -->
+        <div class="action-box" id="actionBox" style="display: none;">
+            <h3>✅ Validasi Lolos - Langkah Selanjutnya</h3>
+            
+            <div class="important-note" style="margin-bottom: 25px;">
+                <strong>📌 PERHATIAN!</strong><br>
+                File yang harus diunggah ke folder pusat adalah <span class="highlight">FILE HASIL UNDUHAN (Excel)</span> di bawah ini, 
+                <strong>BUKAN file asli Anda</strong>. File unduhan sudah diperbaiki dan disesuaikan dengan standar BPS.
+            </div>
+            
+            <p style="margin-bottom: 15px; font-size: 16px;">
+                <strong>Langkah 1:</strong> Unduh file Excel yang sudah divalidasi
+            </p>
+            
+            <div class="action-buttons">
+                <button class="btn-download" id="downloadButton">
+                    📥 Unduh File Hasil Validasi
+                </button>
+            </div>
+            
+            <p style="margin: 25px 0 15px; font-size: 16px;">
+                <strong>Langkah 2:</strong> Buka folder pusat dan unggah file yang baru diunduh
+            </p>
+            
+            <div class="action-buttons">
+                <button class="btn-success" id="openFolderButton">
+                    📂 Buka Folder Upload
+                </button>
+            </div>
+            
+            <p style="margin-top: 20px; font-size: 13px; color: #666;">
+                Nama file yang harus diunggah: <code id="outputFileName"></code>
+            </p>
         </div>
         
         <div class="upload-status" id="uploadStatus"></div>
@@ -1185,73 +1260,151 @@
         
         return { passed: errors.length === 0, errors, warnings };
     }
+
+// Validasi panjang karakter dan tipe data
+function validateDataTypes(jsonData) {
+    const errors = [];
+    const warnings = [];
+    const detailErrors = [];
     
-    function validateDataTypes(jsonData) {
-        const errors = [];
-        const warnings = [];
-        const detailErrors = [];
+    if (!jsonData || jsonData.length < 2) {
+        errors.push('Tidak ada data untuk divalidasi');
+        return { passed: false, errors, warnings, details: [] };
+    }
+    
+    const headers = jsonData[0];
+    const dataRows = jsonData.slice(1);
+    
+    correctMetadata.forEach(meta => {
+        const colIndex = headers.indexOf(meta.variable);
+        if (colIndex === -1) return;
         
-        if (!jsonData || jsonData.length < 2) {
-            errors.push('Tidak ada data untuk divalidasi');
-            return { passed: false, errors, warnings, details: [] };
-        }
+        let varErrors = 0;
         
-        const headers = jsonData[0];
-        const dataRows = jsonData.slice(1);
-        
-        correctMetadata.forEach(meta => {
-            const colIndex = headers.indexOf(meta.variable);
-            if (colIndex === -1) return;
+        dataRows.forEach((row, idx) => {
+            const rowNum = idx + 2;
+            if (row.length <= colIndex) return;
             
-            let varErrors = 0;
+            let value = row[colIndex];
+            if (typeof value === 'string') {
+                value = value.replace(/^["']|["']$/g, '').trim();
+            }
             
-            dataRows.forEach((row, idx) => {
-                const rowNum = idx + 2;
-                if (row.length <= colIndex) return;
+            // Check kelengkapan
+            if (value === null || value === undefined || value === '') {
+                if (meta.required) {
+                    detailErrors.push(`Baris ${rowNum}: ${meta.variable} kosong`);
+                    varErrors++;
+                }
+                return;
+            }
+            
+            // Check tipe data
+            if (meta.type === 'integer') {
+                const numValue = Number(value);
+                if (isNaN(numValue) || !Number.isInteger(numValue)) {
+                    detailErrors.push(`Baris ${rowNum}: ${meta.variable} = "${value}" bukan integer`);
+                    varErrors++;
+                } else if (numValue < 0) {
+                    detailErrors.push(`Baris ${rowNum}: ${meta.variable} = ${numValue} tidak boleh negatif`);
+                    varErrors++;
+                }
+            } else if (meta.type === 'character') {
+                const strValue = String(value);
                 
-                let value = row[colIndex];
-                if (typeof value === 'string') {
-                    value = value.replace(/^["']|["']$/g, '').trim();
+                // Validasi panjang karakter untuk kode wilayah
+                if (meta.length && strValue.length !== meta.length) {
+                    detailErrors.push(`Baris ${rowNum}: ${meta.variable} = "${strValue}" harus ${meta.length} karakter (saat ini ${strValue.length} karakter)`);
+                    varErrors++;
                 }
                 
-                if (value === null || value === undefined || value === '') {
-                    if (meta.required) {
-                        detailErrors.push(`Baris ${rowNum}: ${meta.variable} kosong`);
-                        varErrors++;
-                    }
-                    return;
+                if (meta.maxLength && strValue.length > meta.maxLength) {
+                    detailErrors.push(`Baris ${rowNum}: ${meta.variable} melebihi ${meta.maxLength} karakter`);
+                    varErrors++;
                 }
                 
-                if (meta.type === 'integer') {
-                    const numValue = Number(value);
-                    if (isNaN(numValue) || !Number.isInteger(numValue)) {
-                        detailErrors.push(`Baris ${rowNum}: ${meta.variable} = "${value}" bukan integer`);
+                // Validasi harus angka untuk kode wilayah
+                if (['kdprov', 'kdkab', 'kdkec', 'kddesa', 'idsls', 'idsubsls_261'].includes(meta.variable)) {
+                    if (!/^\d+$/.test(strValue)) {
+                        detailErrors.push(`Baris ${rowNum}: ${meta.variable} = "${strValue}" harus berupa angka`);
                         varErrors++;
-                    }
-                } else if (meta.type === 'character') {
-                    const strValue = String(value);
-                    
-                    if (meta.length && strValue.length !== meta.length) {
-                        detailErrors.push(`Baris ${rowNum}: ${meta.variable} harus ${meta.length} karakter`);
-                        varErrors++;
-                    }
-                    
-                    if (['kdprov', 'kdkab', 'kdkec', 'kddesa', 'idsls', 'idsubsls_261'].includes(meta.variable)) {
-                        if (!/^\d+$/.test(strValue)) {
-                            detailErrors.push(`Baris ${rowNum}: ${meta.variable} harus angka`);
-                            varErrors++;
-                        }
                     }
                 }
-            });
-            
-            if (varErrors > 0) {
-                errors.push(`${meta.variable}: ${varErrors} error`);
             }
         });
         
-        return { passed: errors.length === 0, errors, warnings, details: detailErrors };
+        if (varErrors > 0) {
+            errors.push(`${meta.variable}: ${varErrors} error`);
+        }
+    });
+    
+    return { passed: errors.length === 0, errors, warnings, details: detailErrors };
+}
+
+// Validasi Anomali untuk kk, btt, bku, usaha
+// Validasi Anomali untuk kk, btt, bku, usaha
+function validateAnomalies(jsonData) {
+    const errors = [];
+    const warnings = [];
+    const detailErrors = [];
+    
+    if (!jsonData || jsonData.length < 2) {
+        return { passed: true, errors, warnings, details: [] };
     }
+    
+    const headers = jsonData[0];
+    const dataRows = jsonData.slice(1);
+    
+    const kkIndex = headers.indexOf('kk');
+    const bttIndex = headers.indexOf('btt');
+    const bkuIndex = headers.indexOf('bku');
+    const usahaIndex = headers.indexOf('usaha');
+    
+    // Cek apakah semua kolom yang diperlukan ada
+    if (kkIndex === -1 || bttIndex === -1 || bkuIndex === -1 || usahaIndex === -1) {
+        warnings.push('Tidak dapat melakukan validasi anomali karena kolom tidak lengkap');
+        return { passed: true, errors, warnings, details: [] };
+    }
+    
+    let anomalyCount = 0;
+    
+    dataRows.forEach((row, idx) => {
+        const rowNum = idx + 2;
+        
+        const kk = parseInt(row[kkIndex]) || 0;
+        const btt = parseInt(row[bttIndex]) || 0;
+        const bku = parseInt(row[bkuIndex]) || 0;
+        const usaha = parseInt(row[usahaIndex]) || 0;
+        
+        // Anomali 1: btt tidak boleh lebih besar dari kk
+        if (btt > kk && kk > 0) {
+            detailErrors.push(`Baris ${rowNum}: btt (${btt}) > kk (${kk}) - Bangunan tempat tinggal tidak boleh lebih banyak dari jumlah keluarga`);
+            anomalyCount++;
+        }
+        
+        // Anomali 2: bku tidak boleh lebih besar dari usaha
+        if (bku > usaha && usaha > 0) {
+            detailErrors.push(`Baris ${rowNum}: bku (${bku}) > usaha (${usaha}) - Bangunan usaha tidak boleh lebih banyak dari jumlah usaha`);
+            anomalyCount++;
+        }
+        
+        // Anomali 3: usaha tidak boleh lebih besar dari (kk + btt) - opsional warning
+        if (usaha > (kk + btt) && kk > 0) {
+            warnings.push(`Baris ${rowNum}: usaha (${usaha}) > kk + btt (${kk + btt}) - Periksa kembali data`);
+        }
+    });
+    
+    if (anomalyCount > 0) {
+        errors.push(`Ditemukan ${anomalyCount} anomali data`);
+    }
+    
+    return { 
+        passed: anomalyCount === 0, 
+        errors, 
+        warnings, 
+        details: detailErrors 
+    };
+}
     
     function correctData(jsonData) {
         if (!jsonData || jsonData.length < 2) return jsonData;
@@ -1314,82 +1467,127 @@
         document.getElementById('metadataDetails').innerHTML = html;
     }
     
-    function displayValidationResults(kodeCheck, fileCheck, varCheck, typeCheck) {
-        const summaryHtml = `
-            <div class="summary-card ${kodeCheck.passed ? 'success' : 'error'}">
-                <div class="number">${kodeCheck.passed ? '✓' : '✗'}</div>
-                <div class="label">Kode Kab</div>
-            </div>
-            <div class="summary-card ${fileCheck.passed ? 'success' : 'error'}">
-                <div class="number">${fileCheck.passed ? '✓' : '✗'}</div>
-                <div class="label">File</div>
-            </div>
-            <div class="summary-card ${varCheck.passed ? 'success' : 'error'}">
-                <div class="number">${varCheck.passed ? '✓' : '✗'}</div>
-                <div class="label">Variabel</div>
-            </div>
-            <div class="summary-card ${typeCheck.passed ? 'success' : 'error'}">
-                <div class="number">${typeCheck.passed ? '✓' : '✗'}</div>
-                <div class="label">Tipe Data</div>
-            </div>
-        `;
-        document.getElementById('validationSummary').innerHTML = summaryHtml;
-        
-        let fileHtml = '';
-        if (kodeCheck.errors.length > 0) {
-            fileHtml += `<div class="result-item error"><strong>Error Kode:</strong><br>${kodeCheck.errors.join('<br>')}</div>`;
+// Global variables tambahan
+let validationResults = {
+    kodeCheck: { passed: false, errors: [] },
+    fileCheck: { passed: false, errors: [] },
+    varCheck: { passed: false, errors: [], warnings: [] },
+    typeCheck: { passed: false, errors: [], warnings: [], details: [] },
+    anomalyCheck: { passed: true, errors: [], warnings: [], details: [] }
+};
+
+// ==================== DISPLAY FUNCTIONS (diperbarui) ====================
+function displayValidationResults() {
+    const v = validationResults;
+    
+    // Summary dengan 5 cards
+    const summaryHtml = `
+        <div class="summary-card ${v.kodeCheck.passed ? 'success' : 'error'}">
+            <div class="number">${v.kodeCheck.passed ? '✓' : '✗'}</div>
+            <div class="label">Kode Kab</div>
+        </div>
+        <div class="summary-card ${v.fileCheck.passed ? 'success' : 'error'}">
+            <div class="number">${v.fileCheck.passed ? '✓' : '✗'}</div>
+            <div class="label">File</div>
+        </div>
+        <div class="summary-card ${v.varCheck.passed ? 'success' : 'error'}">
+            <div class="number">${v.varCheck.passed ? '✓' : '✗'}</div>
+            <div class="label">Variabel</div>
+        </div>
+        <div class="summary-card ${v.typeCheck.passed ? 'success' : 'error'}">
+            <div class="number">${v.typeCheck.passed ? '✓' : '✗'}</div>
+            <div class="label">Tipe Data</div>
+        </div>
+        <div class="summary-card ${v.anomalyCheck.passed ? 'success' : 'warning'}">
+            <div class="number">${v.anomalyCheck.passed ? '✓' : '⚠'}</div>
+            <div class="label">Anomali</div>
+        </div>
+    `;
+    document.getElementById('validationSummary').innerHTML = summaryHtml;
+    
+    // File check details
+    let fileHtml = '';
+    if (v.kodeCheck.errors.length > 0) {
+        fileHtml += `<div class="result-item error"><strong>Error Kode:</strong><br>${v.kodeCheck.errors.join('<br>')}</div>`;
+    }
+    if (v.fileCheck.errors.length > 0) {
+        fileHtml += `<div class="result-item error"><strong>Error File:</strong><br>${v.fileCheck.errors.join('<br>')}</div>`;
+    }
+    if (v.kodeCheck.passed && v.fileCheck.passed) {
+        fileHtml += `<div class="result-item success">✓ Format file dan kode kabupaten sesuai (${selectedKodeKab})</div>`;
+    }
+    document.getElementById('fileCheckDetails').innerHTML = fileHtml;
+    
+    // Variable check details
+    let varHtml = '';
+    if (v.varCheck.errors.length > 0) {
+        varHtml += `<div class="result-item error"><strong>Error:</strong><br>${v.varCheck.errors.join('<br>')}</div>`;
+    }
+    if (v.varCheck.warnings.length > 0) {
+        varHtml += `<div class="result-item warning"><strong>Warning:</strong><br>${v.varCheck.warnings.join('<br>')}</div>`;
+    }
+    if (v.varCheck.passed) {
+        varHtml += `<div class="result-item success">✓ Semua 15 variabel wajib tersedia</div>`;
+    }
+    document.getElementById('variableCheckDetails').innerHTML = varHtml;
+    
+    // Data type check details
+    let typeHtml = '';
+    if (v.typeCheck.errors.length > 0) {
+        typeHtml += `<div class="result-item error"><strong>Error Tipe Data & Panjang:</strong><br>${v.typeCheck.errors.join('<br>')}</div>`;
+    }
+    if (v.typeCheck.details && v.typeCheck.details.length > 0) {
+        const showDetails = v.typeCheck.details.slice(0, 10);
+        typeHtml += `<div class="result-item warning"><strong>Detail Error (10 pertama):</strong><br>${showDetails.join('<br>')}</div>`;
+        if (v.typeCheck.details.length > 10) {
+            typeHtml += `<div>... dan ${v.typeCheck.details.length - 10} error lainnya</div>`;
         }
-        if (fileCheck.errors.length > 0) {
-            fileHtml += `<div class="result-item error"><strong>Error File:</strong><br>${fileCheck.errors.join('<br>')}</div>`;
+    }
+    if (v.typeCheck.passed) {
+        typeHtml += `<div class="result-item success">✓ Semua tipe data dan panjang karakter sesuai</div>`;
+    }
+    document.getElementById('dataTypeCheckDetails').innerHTML = typeHtml;
+    
+    // Anomaly check details
+    let anomalyHtml = '';
+    if (v.anomalyCheck.errors.length > 0) {
+        anomalyHtml += `<div class="result-item error"><strong>Error Anomali:</strong><br>${v.anomalyCheck.errors.join('<br>')}</div>`;
+    }
+    if (v.anomalyCheck.warnings.length > 0) {
+        anomalyHtml += `<div class="result-item warning"><strong>Warning Anomali:</strong><br>${v.anomalyCheck.warnings.slice(0, 5).join('<br>')}</div>`;
+        if (v.anomalyCheck.warnings.length > 5) {
+            anomalyHtml += `<div>... dan ${v.anomalyCheck.warnings.length - 5} warning lainnya</div>`;
         }
-        if (kodeCheck.passed && fileCheck.passed) {
-            fileHtml += `<div class="result-item success">✓ Format file dan kode kabupaten sesuai (${selectedKodeKab})</div>`;
-        }
-        document.getElementById('fileCheckDetails').innerHTML = fileHtml;
-        
-        let varHtml = '';
-        if (varCheck.errors.length > 0) {
-            varHtml += `<div class="result-item error"><strong>Error:</strong><br>${varCheck.errors.join('<br>')}</div>`;
-        }
-        if (varCheck.warnings.length > 0) {
-            varHtml += `<div class="result-item warning"><strong>Warning:</strong><br>${varCheck.warnings.join('<br>')}</div>`;
-        }
-        if (varCheck.passed) {
-            varHtml += `<div class="result-item success">✓ Semua 15 variabel wajib tersedia</div>`;
-        }
-        document.getElementById('variableCheckDetails').innerHTML = varHtml;
-        
-        let typeHtml = '';
-        if (typeCheck.errors.length > 0) {
-            typeHtml += `<div class="result-item error"><strong>Error:</strong><br>${typeCheck.errors.join('<br>')}</div>`;
-        }
-        if (typeCheck.details && typeCheck.details.length > 0) {
-            const showDetails = typeCheck.details.slice(0, 10);
-            typeHtml += `<div class="result-item warning"><strong>Detail Error:</strong><br>${showDetails.join('<br>')}</div>`;
-            if (typeCheck.details.length > 10) {
-                typeHtml += `<div>... dan ${typeCheck.details.length - 10} error lainnya</div>`;
-            }
-        }
-        if (typeCheck.passed) {
-            typeHtml += `<div class="result-item success">✓ Semua tipe data dan isian sesuai</div>`;
-        }
-        document.getElementById('dataTypeCheckDetails').innerHTML = typeHtml;
-        
-        displayMetadata();
+    }
+    if (v.anomalyCheck.details && v.anomalyCheck.details.length > 0) {
+        const showDetails = v.anomalyCheck.details.slice(0, 5);
+        anomalyHtml += `<div class="result-item warning"><strong>Detail Anomali:</strong><br>${showDetails.join('<br>')}</div>`;
+    }
+    if (v.anomalyCheck.passed) {
+        anomalyHtml += `<div class="result-item success">✓ Tidak ada anomali data yang terdeteksi</div>`;
     }
     
-    // ==================== UPLOAD & DOWNLOAD FUNCTIONS ====================
+    // Tambahkan anomali details ke dataTypeCheckResult atau buat section baru
+    document.getElementById('dataTypeCheckDetails').innerHTML += `
+        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ffe0c0;">
+            <h4 style="margin-bottom: 10px; color: #c14200;">Validasi Anomali Data</h4>
+            ${anomalyHtml}
+        </div>
+    `;
+    
+    displayMetadata();
+}
+    
+    // ==================== ACTION FUNCTIONS ====================
     function openUploadFolder() {
-        // Buka folder OneDrive di tab baru
         window.open(FOLDER_UPLOAD_URL, '_blank');
         
-        // Tampilkan pesan informasi
         const uploadStatus = document.getElementById('uploadStatus');
         uploadStatus.style.display = 'block';
         uploadStatus.innerHTML = `
             <div class="result-box info">
-                <strong>Folder upload telah dibuka di tab baru.</strong><br><br>
-                Silakan unggah file <strong>${selectedKodeKab}_muatan_validated.xlsx</strong> ke folder tersebut.<br><br>
+                <strong>✅ Folder upload telah dibuka di tab baru.</strong><br><br>
+                Silakan unggah file <code>${selectedKodeKab}_muatan_validated.xlsx</code> yang sudah Anda unduh ke folder tersebut.<br><br>
                 <small style="color: #666;">Jika tab tidak terbuka, <a href="${FOLDER_UPLOAD_URL}" target="_blank">klik di sini</a>.</small>
             </div>
         `;
@@ -1407,93 +1605,114 @@
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
-        // Tampilkan pesan
         const uploadStatus = document.getElementById('uploadStatus');
         uploadStatus.style.display = 'block';
         uploadStatus.innerHTML = `
             <div class="result-box success">
-                <strong>File berhasil diunduh!</strong><br><br>
-                Silakan buka folder upload untuk mengunggah file.<br><br>
-                <button class="btn-primary" onclick="document.getElementById('uploadButton').click()">Buka Folder Upload</button>
+                <strong>✅ File berhasil diunduh!</strong><br><br>
+                Selanjutnya, klik tombol <strong>"Buka Folder Upload"</strong> dan unggah file <code>${selectedKodeKab}_muatan_validated.xlsx</code> ke folder pusat.
             </div>
         `;
     }
     
-    // ==================== MAIN PROCESS ====================
-    async function processFile() {
-        const fileInput = document.getElementById('muatanFile');
-        const file = fileInput.files[0];
-        const delimiter = document.getElementById('delimiterSelect').value;
-        const quoteChar = document.getElementById('quoteChar').value;
-        
-        const kodeCheck = validateKodeKabInput();
-        if (!kodeCheck.passed) {
-            alert(kodeCheck.errors.join('\n'));
-            return;
-        }
-        
-        if (!file) {
-            alert('Silakan pilih file terlebih dahulu');
-            return;
-        }
-        
-        validationPassed = false;
-        document.getElementById('loadingIndicator').style.display = 'block';
-        document.getElementById('resultSection').style.display = 'none';
-        document.getElementById('uploadButton').disabled = true;
-        document.getElementById('progressFill').style.width = '0%';
-        document.getElementById('loadingText').textContent = 'Memvalidasi file, harap tunggu...';
-        
-        try {
-            const fileCheck = validateFileName(file, selectedKodeKab);
-            document.getElementById('progressFill').style.width = '20%';
-            
-            originalData = await parseFile(file, delimiter, quoteChar);
-            document.getElementById('progressFill').style.width = '50%';
-            
-            const varCheck = validateVariables(originalData);
-            document.getElementById('progressFill').style.width = '70%';
-            
-            correctedData = correctData(originalData);
-            
-            const typeCheck = validateDataTypes(correctedData);
-            document.getElementById('progressFill').style.width = '90%';
-            
-            // Create blob for download
-            const ws = XLSX.utils.aoa_to_sheet(correctedData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Validated');
-            const excelBuf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-            downloadBlob = new Blob([excelBuf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-            
-            document.getElementById('progressFill').style.width = '100%';
-            
-            validationPassed = kodeCheck.passed && fileCheck.passed && varCheck.passed && typeCheck.passed;
-            
-            document.getElementById('loadingIndicator').style.display = 'none';
-            document.getElementById('resultSection').style.display = 'block';
-            
-            displayValidationResults(kodeCheck, fileCheck, varCheck, typeCheck);
-            
-            // Enable upload button dan tampilkan download section jika validasi lolos
-            document.getElementById('uploadButton').disabled = !validationPassed;
-            
-            if (validationPassed) {
-                document.getElementById('downloadSection').style.display = 'block';
-                const recordCount = correctedData.length - 1;
-                document.getElementById('uploadStatus').innerHTML = `<div class="result-box success">✅ Validasi BERHASIL! ${recordCount} baris data. Unduh file hasil validasi, lalu unggah ke folder pusat.</div>`;
-            } else {
-                document.getElementById('downloadSection').style.display = 'none';
-                document.getElementById('uploadStatus').innerHTML = `<div class="result-box error">❌ Validasi GAGAL. Perbaiki error sebelum upload.</div>`;
-            }
-            document.getElementById('uploadStatus').style.display = 'block';
-            
-        } catch (error) {
-            console.error('Error:', error);
-            document.getElementById('loadingIndicator').style.display = 'none';
-            alert('Terjadi kesalahan: ' + error.message);
-        }
+
+// ==================== MAIN PROCESS (diperbarui) ====================
+async function processFile() {
+    const fileInput = document.getElementById('muatanFile');
+    const file = fileInput.files[0];
+    const delimiter = document.getElementById('delimiterSelect').value;
+    const quoteChar = document.getElementById('quoteChar').value;
+    
+    // Reset validation results
+    validationResults = {
+        kodeCheck: { passed: false, errors: [] },
+        fileCheck: { passed: false, errors: [] },
+        varCheck: { passed: false, errors: [], warnings: [] },
+        typeCheck: { passed: false, errors: [], warnings: [], details: [] },
+        anomalyCheck: { passed: true, errors: [], warnings: [], details: [] }
+    };
+    
+    const kodeCheck = validateKodeKabInput();
+    validationResults.kodeCheck = kodeCheck;
+    
+    if (!kodeCheck.passed) {
+        alert(kodeCheck.errors.join('\n'));
+        return;
     }
+    
+    if (!file) {
+        alert('Silakan pilih file terlebih dahulu');
+        return;
+    }
+    
+    validationPassed = false;
+    document.getElementById('loadingIndicator').style.display = 'block';
+    document.getElementById('resultSection').style.display = 'none';
+    document.getElementById('actionBox').style.display = 'none';
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('loadingText').textContent = 'Memvalidasi file, harap tunggu...';
+    
+    try {
+        const fileCheck = validateFileName(file, selectedKodeKab);
+        validationResults.fileCheck = fileCheck;
+        document.getElementById('progressFill').style.width = '20%';
+        
+        originalData = await parseFile(file, delimiter, quoteChar);
+        document.getElementById('progressFill').style.width = '40%';
+        
+        const varCheck = validateVariables(originalData);
+        validationResults.varCheck = varCheck;
+        document.getElementById('progressFill').style.width = '60%';
+        
+        correctedData = correctData(originalData);
+        
+        const typeCheck = validateDataTypes(correctedData);
+        validationResults.typeCheck = typeCheck;
+        document.getElementById('progressFill').style.width = '80%';
+        
+        const anomalyCheck = validateAnomalies(correctedData);
+        validationResults.anomalyCheck = anomalyCheck;
+        document.getElementById('progressFill').style.width = '90%';
+        
+        // Create blob for download
+        const ws = XLSX.utils.aoa_to_sheet(correctedData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Validated');
+        const excelBuf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        downloadBlob = new Blob([excelBuf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        
+        document.getElementById('progressFill').style.width = '100%';
+        
+        validationPassed = kodeCheck.passed && fileCheck.passed && varCheck.passed && typeCheck.passed;
+        // Anomali tidak menggagalkan validasi, hanya warning
+        
+        document.getElementById('loadingIndicator').style.display = 'none';
+        document.getElementById('resultSection').style.display = 'block';
+        
+        displayValidationResults();
+        
+        if (validationPassed) {
+            document.getElementById('actionBox').style.display = 'block';
+            document.getElementById('outputFileName').textContent = `${selectedKodeKab}_muatan_validated.xlsx`;
+            
+            const recordCount = correctedData.length - 1;
+            let statusMessage = `✅ Validasi BERHASIL! ${recordCount} baris data.`;
+            if (!anomalyCheck.passed) {
+                statusMessage += ` Terdapat ${anomalyCheck.errors.length} anomali (warning).`;
+            }
+            document.getElementById('uploadStatus').innerHTML = `<div class="result-box success">${statusMessage} Silakan ikuti langkah di bawah ini.</div>`;
+        } else {
+            document.getElementById('actionBox').style.display = 'none';
+            document.getElementById('uploadStatus').innerHTML = `<div class="result-box error">❌ Validasi GAGAL. Perbaiki error sebelum melanjutkan.</div>`;
+        }
+        document.getElementById('uploadStatus').style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('loadingIndicator').style.display = 'none';
+        alert('Terjadi kesalahan: ' + error.message);
+    }
+}
     
     function resetForm() {
         $('#kodeKabInput').val('').trigger('change');
@@ -1502,8 +1721,7 @@
         document.getElementById('quoteChar').value = '"';
         document.getElementById('resultSection').style.display = 'none';
         document.getElementById('uploadStatus').style.display = 'none';
-        document.getElementById('downloadSection').style.display = 'none';
-        document.getElementById('uploadButton').disabled = true;
+        document.getElementById('actionBox').style.display = 'none';
         document.getElementById('fileNameHint').innerHTML = '';
         originalData = null;
         correctedData = null;
@@ -1551,8 +1769,8 @@
     });
     
     document.getElementById('validateButton').addEventListener('click', processFile);
-    document.getElementById('uploadButton').addEventListener('click', openUploadFolder);
     document.getElementById('downloadButton').addEventListener('click', downloadValidatedFile);
+    document.getElementById('openFolderButton').addEventListener('click', openUploadFolder);
     document.getElementById('resetButton').addEventListener('click', resetForm);
     
     $(document).ready(function() {
