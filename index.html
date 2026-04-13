@@ -1581,9 +1581,12 @@ function displayValidationResults() {
         anomalyHtml += `<div class="result-item error"><strong>❌ Error Anomali (${v.anomalyCheck.errorCount} baris - harus diperbaiki):</strong><br>${v.anomalyCheck.errors.join('<br>')}</div>`;
     }
     if (v.anomalyCheck.warnings.length > 0) {
-        anomalyHtml += `<div class="result-item warning"><strong>⚠️ Warning Anomali (${v.anomalyCheck.warningCount} baris data - opsional diperbaiki):</strong><br>${v.anomalyCheck.warnings.slice(0, 5).join('<br>')}</div>`;
-        if (v.anomalyCheck.warnings.length > 5) {
-            anomalyHtml += `<div>... dan ${v.anomalyCheck.warnings.length - 5} warning lainnya</div>`;
+        const displayWarnings = v.anomalyCheck.warnings.slice(0, 5);
+        anomalyHtml += `<div class="result-item warning"><strong>⚠️ Warning Anomali (${v.anomalyCheck.warningCount} baris data - opsional diperbaiki):</strong><br>${displayWarnings.join('<br>')}</div>`;
+        
+        // Gunakan warningCount, bukan warnings.length
+        if (v.anomalyCheck.warningCount > 5) {
+            anomalyHtml += `<div>... dan ${v.anomalyCheck.warningCount - 5} warning lainnya</div>`;
         }
     }
     if (v.anomalyCheck.details && v.anomalyCheck.details.length > 0) {
