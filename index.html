@@ -1385,17 +1385,22 @@
             let rowHasError = false;
             let rowHasWarning = false;
             
-            if (btt > kk && kk > 0) {
+            // Anomali 1: btt tidak boleh lebih besar dari kk (ERROR)
+            // Tetap diperiksa meskipun kk = 0, karena btt > 0 dan kk = 0 adalah anomali
+            if (btt > kk) {
                 detailErrors.push(`Baris ${rowNum}: btt (${btt}) > kk (${kk}) - Bangunan tempat tinggal tidak boleh lebih banyak dari jumlah keluarga`);
                 rowHasError = true;
             }
             
-            if (bku > usaha && usaha > 0) {
+            // Anomali 2: bku tidak boleh lebih besar dari usaha (ERROR)
+            if (bku > usaha) {
                 detailErrors.push(`Baris ${rowNum}: bku (${bku}) > usaha (${usaha}) - Bangunan usaha tidak boleh lebih banyak dari jumlah usaha`);
                 rowHasError = true;
             }
             
-            if (usaha > (kk + btt) && kk > 0) {
+            // Anomali 3: usaha tidak boleh lebih besar dari (kk + btt) - WARNING
+            // PERBAIKAN: Hapus kondisi && kk > 0, karena meskipun kk = 0, jika usaha > btt tetap anomali
+            if (usaha > (kk + btt)) {
                 warnings.push(`Baris ${rowNum}: usaha (${usaha}) > kk + btt (${kk + btt}) - Pastikan kembali data`);
                 rowHasWarning = true;
             }
