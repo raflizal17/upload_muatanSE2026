@@ -1400,7 +1400,7 @@ function validateAnomalies(jsonData) {
         
         // Anomali 3: usaha tidak boleh lebih besar dari (kk + btt) - opsional WARNING
         if (usaha > (kk + btt) && kk > 0) {
-            warnings.push(`Baris ${rowNum}: usaha (${usaha}) > kk + btt (${kk + btt}) - Periksa kembali data`);
+            warnings.push(`Baris ${rowNum}: usaha (${usaha}) > kk + btt (${kk + btt}) - Pastikan kembali data`);
             rowHasWarning = true;
         }
         
@@ -1581,7 +1581,7 @@ function displayValidationResults() {
         anomalyHtml += `<div class="result-item error"><strong>❌ Error Anomali (${v.anomalyCheck.errorCount} baris - harus diperbaiki):</strong><br>${v.anomalyCheck.errors.join('<br>')}</div>`;
     }
     if (v.anomalyCheck.warnings.length > 0) {
-        anomalyHtml += `<div class="result-item warning"><strong>⚠️ Warning Anomali (${v.anomalyCheck.warningCount} baris - tidak harus diperbaiki):</strong><br>${v.anomalyCheck.warnings.slice(0, 5).join('<br>')}</div>`;
+        anomalyHtml += `<div class="result-item warning"><strong>⚠️ Warning Anomali (${v.anomalyCheck.warningCount} baris data - opsional diperbaiki):</strong><br>${v.anomalyCheck.warnings.slice(0, 5).join('<br>')}</div>`;
         if (v.anomalyCheck.warnings.length > 5) {
             anomalyHtml += `<div>... dan ${v.anomalyCheck.warnings.length - 5} warning lainnya</div>`;
         }
@@ -1733,7 +1733,7 @@ async function processFile() {
             const recordCount = correctedData.length - 1;
             let statusMessage = `✅ Validasi BERHASIL! ${recordCount} baris data.`;
             if (validationResults.anomalyCheck.warningCount > 0) {
-                statusMessage += ` Terdapat ${validationResults.anomalyCheck.warningCount} baris warning (tidak harus diperbaiki).`;
+                statusMessage += ` Terdapat ${validationResults.anomalyCheck.warningCount} baris warning (opsional diperbaiki).`;
             }
             document.getElementById('uploadStatus').innerHTML = `<div class="result-box success">${statusMessage} Silakan ikuti langkah di bawah ini.</div>`;
         } else {
@@ -1744,7 +1744,7 @@ async function processFile() {
                 errorMessage += `<br><br>⚠️ Terdapat <strong>${validationResults.anomalyCheck.errorCount} baris data</strong> dengan anomali yang harus diperbaiki.`;
             }
             if (validationResults.anomalyCheck.warningCount > 0) {
-                errorMessage += `<br><br>📝 Terdapat ${validationResults.anomalyCheck.warningCount} baris warning (tidak harus diperbaiki).`;
+                errorMessage += `<br><br>📝 Terdapat ${validationResults.anomalyCheck.warningCount} baris warning (opsional diperbaiki).`;
             }
             document.getElementById('uploadStatus').innerHTML = `<div class="result-box error">${errorMessage}</div>`;
         }
