@@ -1131,7 +1131,7 @@
         fileCheck: { passed: false, errors: [] },
         varCheck: { passed: false, errors: [], warnings: [] },
         typeCheck: { passed: false, errors: [], warnings: [], details: [] },
-        anomalyCheck: { passed: true, errors: [], warnings: [], details: [], errorCount: 0, warningCount: 0 }
+        anomalyCheck: { passed: true, errors: [], warnings: [], details: [], detailWarnings: [], errorCount: 0, warningCount: 0 }
     };
     
     // ==================== INIT SELECT2 ====================
@@ -1353,9 +1353,10 @@
         const errors = [];
         const warnings = [];
         const detailErrors = [];
+        const detailWarnings = [];  // <-- Array baru untuk detail warning
         
         if (!jsonData || jsonData.length < 2) {
-            return { passed: true, errors, warnings, details: [], errorCount: 0, warningCount: 0 };
+            return { passed: true, errors, warnings, details: [], detailWarnings: [], errorCount: 0, warningCount: 0 };
         }
         
         const headers = jsonData[0];
@@ -1368,7 +1369,7 @@
         
         if (kkIndex === -1 || bttIndex === -1 || bkuIndex === -1 || usahaIndex === -1) {
             warnings.push('Tidak dapat melakukan validasi anomali karena kolom tidak lengkap');
-            return { passed: true, errors, warnings, details: [], errorCount: 0, warningCount: 0 };
+            return { passed: true, errors, warnings, details: [], detailWarnings: [], errorCount: 0, warningCount: 0 };
         }
         
         const errorRows = new Set();
@@ -1385,23 +1386,18 @@
             let rowHasError = false;
             let rowHasWarning = false;
             
-            // Anomali 1: btt tidak boleh lebih besar dari kk (ERROR)
-            // Tetap diperiksa meskipun kk = 0, karena btt > 0 dan kk = 0 adalah anomali
             if (btt > kk) {
                 detailErrors.push(`Baris ${rowNum}: btt (${btt}) > kk (${kk}) - Bangunan tempat tinggal tidak boleh lebih banyak dari jumlah keluarga`);
                 rowHasError = true;
             }
             
-            // Anomali 2: bku tidak boleh lebih besar dari usaha (ERROR)
             if (bku > usaha) {
                 detailErrors.push(`Baris ${rowNum}: bku (${bku}) > usaha (${usaha}) - Bangunan usaha tidak boleh lebih banyak dari jumlah usaha`);
                 rowHasError = true;
             }
             
-            // Anomali 3: usaha tidak boleh lebih besar dari (kk + btt) - WARNING
-            // PERBAIKAN: Hapus kondisi && kk > 0, karena meskipun kk = 0, jika usaha > btt tetap anomali
             if (usaha > (kk + btt)) {
-                warnings.push(`Baris ${rowNum}: usaha (${usaha}) > kk + btt (${kk + btt}) - Pastikan kembali data`);
+                detailWarnings.push(`Baris ${rowNum}: usaha (${usaha}) > kk + btt (${kk + btt}) - Pastikan kembali data`);  // <-- Simpan ke detailWarnings
                 rowHasWarning = true;
             }
             
@@ -1412,18 +1408,24 @@
         const errorCount = errorRows.size;
         const warningCount = warningRows.size;
         
+        // Summary errors (hanya untuk ditampilkan)
         if (errorCount > 0) {
             errors.push(`Ditemukan ${errorCount} baris data dengan anomali (error)`);
         }
         
+        // Summary warnings (hanya untuk ditampilkan)
         if (warningCount > 0) {
             warnings.push(`Ditemukan ${warningCount} baris data dengan anomali (warning)`);
         }
         
         return { 
             passed: errorCount === 0,
-            errors, warnings, details: detailErrors,
-            errorCount, warningCount
+            errors,                    // Summary errors
+            warnings,                  // Summary warnings (untuk display)
+            details: detailErrors,     // Detail errors
+            detailWarnings: detailWarnings,  // Detail warnings (untuk Excel)
+            errorCount, 
+            warningCount
         };
     }
     
@@ -1504,13 +1506,14 @@
             });
         }
         
-        // Warning Anomali
-        if (v.anomalyCheck.warnings) {
-            v.anomalyCheck.warnings.forEach(warn => {
+        // Warning Anomali - gunakan detailWarnings, bukan warnings
+        if (v.anomalyCheck.detailWarnings) {
+            v.anomalyCheck.detailWarnings.forEach(warn => {
                 const match = warn.match(/Baris (\d+): (\w+) \((\d+)\) > (\w+) \+ (\w+) \((\d+)\)/);
                 if (match) {
                     errorData.push(['ANOMALI WARNING', match[2], match[1], `${match[3]} > ${match[6]}`, warn]);
                 } else {
+                    // Fallback jika regex tidak cocok
                     errorData.push(['ANOMALI WARNING', '-', '-', '-', warn]);
                 }
             });
@@ -1613,13 +1616,13 @@
         }
         if (v.typeCheck.passed) typeHtml += `<div class="result-item success">✓ Semua tipe data dan panjang karakter sesuai</div>`;
         
-        // Anomaly check
+        // Anomaly check - gunakan detailWarnings untuk menampilkan detail
         let anomalyHtml = '';
         if (v.anomalyCheck.errors.length) {
             anomalyHtml += `<div class="result-item error"><strong>❌ Error Anomali (${v.anomalyCheck.errorCount} baris data - harus diperbaiki):</strong><br>${v.anomalyCheck.errors.join('<br>')}</div>`;
         }
-        if (v.anomalyCheck.warnings.length) {
-            anomalyHtml += `<div class="result-item warning"><strong>⚠️ Warning Anomali (${v.anomalyCheck.warningCount} baris data - opsional diperbaiki):</strong><br>${v.anomalyCheck.warnings.join('<br>')}</div>`;
+        if (v.anomalyCheck.detailWarnings && v.anomalyCheck.detailWarnings.length) {
+            anomalyHtml += `<div class="result-item warning"><strong>⚠️ Warning Anomali (${v.anomalyCheck.warningCount} baris data - opsional diperbaiki):</strong><br>${v.anomalyCheck.detailWarnings.join('<br>')}</div>`;
         }
         if (v.anomalyCheck.details && v.anomalyCheck.details.length) {
             const showDetails = v.anomalyCheck.details.slice(0, 5);
@@ -1689,7 +1692,7 @@
             fileCheck: { passed: false, errors: [] },
             varCheck: { passed: false, errors: [], warnings: [] },
             typeCheck: { passed: false, errors: [], warnings: [], details: [] },
-            anomalyCheck: { passed: true, errors: [], warnings: [], details: [], errorCount: 0, warningCount: 0 }
+            anomalyCheck: { passed: true, errors: [], warnings: [], details: [], detailWarnings: [], errorCount: 0, warningCount: 0 }
         };
         
         const kodeCheck = validateKodeKabInput();
