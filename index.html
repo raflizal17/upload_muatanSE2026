@@ -1347,14 +1347,13 @@ function validateDataTypes(jsonData) {
 }
 
 // Validasi Anomali untuk kk, btt, bku, usaha
-// Validasi Anomali untuk kk, btt, bku, usaha
 function validateAnomalies(jsonData) {
     const errors = [];
     const warnings = [];
     const detailErrors = [];
     
     if (!jsonData || jsonData.length < 2) {
-        return { passed: true, errors, warnings, details: [] };
+        return { passed: true, errors, warnings, details: [], errorCount: 0, warningCount: 0 };
     }
     
     const headers = jsonData[0];
@@ -1368,10 +1367,13 @@ function validateAnomalies(jsonData) {
     // Cek apakah semua kolom yang diperlukan ada
     if (kkIndex === -1 || bttIndex === -1 || bkuIndex === -1 || usahaIndex === -1) {
         warnings.push('Tidak dapat melakukan validasi anomali karena kolom tidak lengkap');
-        return { passed: true, errors, warnings, details: [] };
+        return { passed: true, errors, warnings, details: [], errorCount: 0, warningCount: 0 };
     }
     
-    let anomalyCount = 0;
+    let errorCount = 0;      // Jumlah baris yang error
+    let warningCount = 0;    // Jumlah baris yang warning
+    const errorRows = new Set();     // Set untuk menyimpan nomor baris error (unik)
+    const warningRows = new Set();   // Set untuk menyimpan nomor baris warning (unik)
     
     dataRows.forEach((row, idx) => {
         const rowNum = idx + 2;
@@ -1381,33 +1383,53 @@ function validateAnomalies(jsonData) {
         const bku = parseInt(row[bkuIndex]) || 0;
         const usaha = parseInt(row[usahaIndex]) || 0;
         
-        // Anomali 1: btt tidak boleh lebih besar dari kk
+        let rowHasError = false;
+        let rowHasWarning = false;
+        
+        // Anomali 1: btt tidak boleh lebih besar dari kk (ERROR)
         if (btt > kk && kk > 0) {
             detailErrors.push(`Baris ${rowNum}: btt (${btt}) > kk (${kk}) - Bangunan tempat tinggal tidak boleh lebih banyak dari jumlah keluarga`);
-            anomalyCount++;
+            rowHasError = true;
         }
         
-        // Anomali 2: bku tidak boleh lebih besar dari usaha
+        // Anomali 2: bku tidak boleh lebih besar dari usaha (ERROR)
         if (bku > usaha && usaha > 0) {
             detailErrors.push(`Baris ${rowNum}: bku (${bku}) > usaha (${usaha}) - Bangunan usaha tidak boleh lebih banyak dari jumlah usaha`);
-            anomalyCount++;
+            rowHasError = true;
         }
         
-        // Anomali 3: usaha tidak boleh lebih besar dari (kk + btt) - opsional warning
+        // Anomali 3: usaha tidak boleh lebih besar dari (kk + btt) - opsional WARNING
         if (usaha > (kk + btt) && kk > 0) {
-            warnings.push(`Baris ${rowNum}: usaha (${usaha}) > kk + btt (${kk + btt}) - Pastikan kembali data`);
+            warnings.push(`Baris ${rowNum}: usaha (${usaha}) > kk + btt (${kk + btt}) - Periksa kembali data`);
+            rowHasWarning = true;
+        }
+        
+        if (rowHasError) {
+            errorRows.add(rowNum);
+        }
+        if (rowHasWarning) {
+            warningRows.add(rowNum);
         }
     });
     
-    if (anomalyCount > 0) {
-        errors.push(`Ditemukan ${anomalyCount} anomali data`);
+    errorCount = errorRows.size;
+    warningCount = warningRows.size;
+    
+    if (errorCount > 0) {
+        errors.push(`Ditemukan ${errorCount} baris data dengan anomali (error)`);
+    }
+    
+    if (warningCount > 0) {
+        warnings.push(`Ditemukan ${warningCount} baris data dengan anomali (warning)`);
     }
     
     return { 
-        passed: anomalyCount === 0, 
+        passed: errorCount === 0,   // Hanya error yang menggagalkan
         errors, 
         warnings, 
-        details: detailErrors 
+        details: detailErrors,
+        errorCount: errorCount,
+        warningCount: warningCount
     };
 }
     
@@ -1556,25 +1578,28 @@ function displayValidationResults() {
     // Anomaly check details
     let anomalyHtml = '';
     if (v.anomalyCheck.errors.length > 0) {
-        anomalyHtml += `<div class="result-item error"><strong>❌ Error Anomali (harus diperbaiki):</strong><br>${v.anomalyCheck.errors.join('<br>')}</div>`;
+        anomalyHtml += `<div class="result-item error"><strong>❌ Error Anomali (${v.anomalyCheck.errorCount} baris - harus diperbaiki):</strong><br>${v.anomalyCheck.errors.join('<br>')}</div>`;
     }
     if (v.anomalyCheck.warnings.length > 0) {
-        anomalyHtml += `<div class="result-item warning"><strong>⚠️ Warning Anomali (tidak harus diperbaiki):</strong><br>${v.anomalyCheck.warnings.slice(0, 5).join('<br>')}</div>`;
+        anomalyHtml += `<div class="result-item warning"><strong>⚠️ Warning Anomali (${v.anomalyCheck.warningCount} baris - tidak harus diperbaiki):</strong><br>${v.anomalyCheck.warnings.slice(0, 5).join('<br>')}</div>`;
         if (v.anomalyCheck.warnings.length > 5) {
             anomalyHtml += `<div>... dan ${v.anomalyCheck.warnings.length - 5} warning lainnya</div>`;
         }
     }
     if (v.anomalyCheck.details && v.anomalyCheck.details.length > 0) {
         const showDetails = v.anomalyCheck.details.slice(0, 5);
-        anomalyHtml += `<div class="result-item error"><strong>Detail Error Anomali:</strong><br>${showDetails.join('<br>')}</div>`;
+        anomalyHtml += `<div class="result-item error"><strong>Detail Baris yang Error:</strong><br>${showDetails.join('<br>')}</div>`;
         if (v.anomalyCheck.details.length > 5) {
             anomalyHtml += `<div>... dan ${v.anomalyCheck.details.length - 5} error lainnya</div>`;
         }
     }
     if (v.anomalyCheck.passed) {
-        anomalyHtml += `<div class="result-item success">✅ Tidak ada anomali data yang terdeteksi</div>`;
-    }
-    
+        if (v.anomalyCheck.warningCount > 0) {
+            anomalyHtml += `<div class="result-item success">✅ Tidak ada error anomali. Terdapat ${v.anomalyCheck.warningCount} baris warning (opsional).</div>`;
+        } else {
+            anomalyHtml += `<div class="result-item success">✅ Tidak ada anomali data yang terdeteksi</div>`;
+        }
+    }    
     // Tambahkan anomali details ke dataTypeCheckResult
     document.getElementById('dataTypeCheckDetails').innerHTML += `
         <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ffe0c0;">
@@ -1707,13 +1732,19 @@ async function processFile() {
             
             const recordCount = correctedData.length - 1;
             let statusMessage = `✅ Validasi BERHASIL! ${recordCount} baris data.`;
+            if (validationResults.anomalyCheck.warningCount > 0) {
+                statusMessage += ` Terdapat ${validationResults.anomalyCheck.warningCount} baris warning (tidak harus diperbaiki).`;
+            }
             document.getElementById('uploadStatus').innerHTML = `<div class="result-box success">${statusMessage} Silakan ikuti langkah di bawah ini.</div>`;
         } else {
             document.getElementById('actionBox').style.display = 'none';
             
             let errorMessage = '❌ Validasi GAGAL. Perbaiki error sebelum melanjutkan.';
-            if (!anomalyCheck.passed) {
-                errorMessage += `<br><br>⚠️ Terdapat ${anomalyCheck.errors.length} anomali data yang harus diperbaiki.`;
+            if (!validationResults.anomalyCheck.passed) {
+                errorMessage += `<br><br>⚠️ Terdapat <strong>${validationResults.anomalyCheck.errorCount} baris data</strong> dengan anomali yang harus diperbaiki.`;
+            }
+            if (validationResults.anomalyCheck.warningCount > 0) {
+                errorMessage += `<br><br>📝 Terdapat ${validationResults.anomalyCheck.warningCount} baris warning (tidak harus diperbaiki).`;
             }
             document.getElementById('uploadStatus').innerHTML = `<div class="result-box error">${errorMessage}</div>`;
         }
