@@ -1395,7 +1395,7 @@ function validateAnomalies(jsonData) {
         
         // Anomali 3: usaha tidak boleh lebih besar dari (kk + btt) - opsional warning
         if (usaha > (kk + btt) && kk > 0) {
-            warnings.push(`Baris ${rowNum}: usaha (${usaha}) > kk + btt (${kk + btt}) - Periksa kembali data`);
+            warnings.push(`Baris ${rowNum}: usaha (${usaha}) > kk + btt (${kk + btt}) - Pastikan kembali data`);
         }
     });
     
@@ -1559,7 +1559,7 @@ function displayValidationResults() {
         anomalyHtml += `<div class="result-item error"><strong>❌ Error Anomali (harus diperbaiki):</strong><br>${v.anomalyCheck.errors.join('<br>')}</div>`;
     }
     if (v.anomalyCheck.warnings.length > 0) {
-        anomalyHtml += `<div class="result-item warning"><strong>⚠️ Warning Anomali (tidak mandatory):</strong><br>${v.anomalyCheck.warnings.slice(0, 5).join('<br>')}</div>`;
+        anomalyHtml += `<div class="result-item warning"><strong>⚠️ Warning Anomali (tidak wajib):</strong><br>${v.anomalyCheck.warnings.slice(0, 5).join('<br>')}</div>`;
         if (v.anomalyCheck.warnings.length > 5) {
             anomalyHtml += `<div>... dan ${v.anomalyCheck.warnings.length - 5} warning lainnya</div>`;
         }
