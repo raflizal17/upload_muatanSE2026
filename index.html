@@ -1918,21 +1918,18 @@
             anomalyHtml += `<div class="result-item error"><strong>❌ Error Anomali (${v.anomalyCheck.errorCount} baris data - harus diperbaiki):</strong><br>${v.anomalyCheck.errors.join('<br>')}</div>`;
         }
         if (v.anomalyCheck.detailWarnings && v.anomalyCheck.detailWarnings.length) {
-            // Tampilkan maksimal 5 warning
-            const displayWarnings = v.anomalyCheck.detailWarnings.slice(0, 5);
-            anomalyHtml += `<div class="result-item warning"><strong>⚠️ Warning Anomali (${v.anomalyCheck.warningCount} baris data - opsional diperbaiki):</strong><br>${displayWarnings.join('<br>')}</div>`;
+            // Tampilkan maksimal 5 warning, gabungkan dalam satu string
+            const displayWarnings = v.anomalyCheck.detailWarnings.slice(0, 5).join('<br>');
+            const moreWarningText = v.anomalyCheck.warningCount > 5 ? `<br><em>... dan ${v.anomalyCheck.warningCount - 5} warning lainnya</em>` : '';
             
-            // Jika ada lebih dari 5, tampilkan "... dan X warning lainnya"
-            if (v.anomalyCheck.warningCount > 5) {
-                anomalyHtml += `<div class="result-item warning" style="margin-top: -5px;"><em>... dan ${v.anomalyCheck.warningCount - 5} warning lainnya</em></div>`;
-            }
+            anomalyHtml += `<div class="result-item warning"><strong>⚠️ Warning Anomali (${v.anomalyCheck.warningCount} baris data - opsional diperbaiki):</strong><br>${displayWarnings}${moreWarningText}</div>`;
         }
         if (v.anomalyCheck.details && v.anomalyCheck.details.length) {
-            const showDetails = v.anomalyCheck.details.slice(0, 5);
-            anomalyHtml += `<div class="result-item error"><strong>Detail Baris yang Error:</strong><br>${showDetails.join('<br>')}</div>`;
-            if (v.anomalyCheck.details.length > 5) {
-                anomalyHtml += `<div class="result-item error" style="margin-top: -5px;"><em>... dan ${v.anomalyCheck.details.length - 5} error lainnya</em></div>`;
-            }
+            // Tampilkan maksimal 5 error detail, gabungkan dalam satu string
+            const showDetails = v.anomalyCheck.details.slice(0, 5).join('<br>');
+            const moreErrorText = v.anomalyCheck.details.length > 5 ? `<br><em>... dan ${v.anomalyCheck.details.length - 5} error lainnya</em>` : '';
+            
+            anomalyHtml += `<div class="result-item error"><strong>Detail Baris yang Error:</strong><br>${showDetails}${moreErrorText}</div>`;
         }
         if (v.anomalyCheck.passed) {
             if (v.anomalyCheck.warningCount > 0) {
