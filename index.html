@@ -1298,27 +1298,27 @@
             return { passed: false, errors, warnings, details, missingInMasterDetails: [], missingInMuatanDetails: [] };
         }
         
-        // Cari kolom idsubsls di master
+        // Cari kolom di master
         const masterHeaders = masterData[0];
         let masterIdIndex = masterHeaders.indexOf('idsubsls');
-        if (masterIdIndex === -1) {
-            masterIdIndex = masterHeaders.indexOf('idsubsls_261');
-        }
-        if (masterIdIndex === -1) {
-            masterIdIndex = 0; // Asumsikan kolom pertama
-        }
+        if (masterIdIndex === -1) masterIdIndex = masterHeaders.indexOf('idsubsls_261');
+        if (masterIdIndex === -1) masterIdIndex = 0;
         
-        // Cari kolom idsubsls_261 di muatan
+        // Cari kolom nama SLS di master
+        const masterNamaIndex = masterHeaders.indexOf('nmsls');
+        
+        // Cari kolom di muatan
         const muatanHeaders = muatanData[0];
         const muatanIdIndex = muatanHeaders.indexOf('idsubsls_261');
+        const muatanNamaIndex = muatanHeaders.indexOf('nmsls');
         
         if (muatanIdIndex === -1) {
             errors.push('Kolom idsubsls_261 tidak ditemukan di file muatan');
             return { passed: false, errors, warnings, details, missingInMasterDetails: [], missingInMuatanDetails: [] };
         }
         
-        // Kumpulkan data ID dari master (dengan info baris)
-        const masterIdMap = new Map(); // id -> [baris]
+        // Kumpulkan data ID dari master (dengan info baris dan nama SLS)
+        const masterIdMap = new Map(); // id -> { rows: [], nama: '' }
         for (let i = 1; i < masterData.length; i++) {
             const row = masterData[i];
             if (row.length > masterIdIndex) {
@@ -1327,16 +1327,20 @@
                     id = String(id).trim();
                     if (id.length === 16) {
                         if (!masterIdMap.has(id)) {
-                            masterIdMap.set(id, []);
+                            masterIdMap.set(id, { rows: [], nama: '' });
                         }
-                        masterIdMap.get(id).push(i + 1);
+                        masterIdMap.get(id).rows.push(i + 1);
+                        if (masterNamaIndex !== -1 && row.length > masterNamaIndex) {
+                            const nama = row[masterNamaIndex];
+                            if (nama) masterIdMap.get(id).nama = String(nama).trim();
+                        }
                     }
                 }
             }
         }
         
-        // Kumpulkan data ID dari muatan (dengan info baris)
-        const muatanIdMap = new Map(); // id -> [baris]
+        // Kumpulkan data ID dari muatan (dengan info baris dan nama SLS)
+        const muatanIdMap = new Map(); // id -> { rows: [], nama: '' }
         for (let i = 1; i < muatanData.length; i++) {
             const row = muatanData[i];
             if (row.length > muatanIdIndex) {
@@ -1345,9 +1349,13 @@
                     id = String(id).trim();
                     if (id.length === 16) {
                         if (!muatanIdMap.has(id)) {
-                            muatanIdMap.set(id, []);
+                            muatanIdMap.set(id, { rows: [], nama: '' });
                         }
-                        muatanIdMap.get(id).push(i + 1);
+                        muatanIdMap.get(id).rows.push(i + 1);
+                        if (muatanNamaIndex !== -1 && row.length > muatanNamaIndex) {
+                            const nama = row[muatanNamaIndex];
+                            if (nama) muatanIdMap.get(id).nama = String(nama).trim();
+                        }
                     }
                 }
             }
@@ -1360,15 +1368,25 @@
         const duplicateInMaster = [];
         const duplicateInMuatan = [];
         
-        masterIdMap.forEach((rows, id) => {
-            if (rows.length > 1) {
-                duplicateInMaster.push({ id, rows, count: rows.length });
+        masterIdMap.forEach((data, id) => {
+            if (data.rows.length > 1) {
+                duplicateInMaster.push({ 
+                    id, 
+                    nama: data.nama, 
+                    rows: data.rows, 
+                    count: data.rows.length 
+                });
             }
         });
         
-        muatanIdMap.forEach((rows, id) => {
-            if (rows.length > 1) {
-                duplicateInMuatan.push({ id, rows, count: rows.length });
+        muatanIdMap.forEach((data, id) => {
+            if (data.rows.length > 1) {
+                duplicateInMuatan.push({ 
+                    id, 
+                    nama: data.nama, 
+                    rows: data.rows, 
+                    count: data.rows.length 
+                });
             }
         });
         
@@ -1378,15 +1396,23 @@
         
         masterIds.forEach(id => {
             if (!muatanIds.has(id)) {
-                const rows = masterIdMap.get(id) || [];
-                missingInMuatan.push({ id, rows });
+                const data = masterIdMap.get(id);
+                missingInMuatan.push({ 
+                    id, 
+                    nama: data.nama, 
+                    rows: data.rows 
+                });
             }
         });
         
         muatanIds.forEach(id => {
             if (!masterIds.has(id)) {
-                const rows = muatanIdMap.get(id) || [];
-                missingInMaster.push({ id, rows });
+                const data = muatanIdMap.get(id);
+                missingInMaster.push({ 
+                    id, 
+                    nama: data.nama, 
+                    rows: data.rows 
+                });
             }
         });
         
@@ -1395,31 +1421,19 @@
         details.push(`Total IDSUBSLS di Muatan: ${muatanIds.size}`);
         details.push(`IDSUBSLS yang cocok: ${masterIds.size - missingInMuatan.length}`);
         
-        // Buat pesan error
         if (duplicateInMaster.length > 0) {
             errors.push(`Duplikat di Master: ${duplicateInMaster.length} ID`);
-            duplicateInMaster.slice(0, 5).forEach(d => {
-                details.push(`  - ID ${d.id} muncul ${d.count}x di baris: ${d.rows.join(', ')}`);
-            });
-            if (duplicateInMaster.length > 5) {
-                details.push(`  ... dan ${duplicateInMaster.length - 5} duplikat lainnya`);
-            }
         }
         
         if (duplicateInMuatan.length > 0) {
             errors.push(`Duplikat di Muatan: ${duplicateInMuatan.length} ID`);
-            duplicateInMuatan.slice(0, 5).forEach(d => {
-                details.push(`  - ID ${d.id} muncul ${d.count}x di baris: ${d.rows.join(', ')}`);
-            });
-            if (duplicateInMuatan.length > 5) {
-                details.push(`  ... dan ${duplicateInMuatan.length - 5} duplikat lainnya`);
-            }
         }
         
         if (missingInMuatan.length > 0) {
             errors.push(`${missingInMuatan.length} IDSUBSLS di Master tidak ditemukan di Muatan`);
             missingInMuatan.slice(0, 10).forEach(m => {
-                details.push(`  - ID ${m.id} (Master baris: ${m.rows.join(', ')})`);
+                const nama = m.nama ? ` (${m.nama})` : '';
+                details.push(`  - ${m.id}${nama}`);
             });
             if (missingInMuatan.length > 10) {
                 details.push(`  ... dan ${missingInMuatan.length - 10} ID lainnya`);
@@ -1429,7 +1443,8 @@
         if (missingInMaster.length > 0) {
             errors.push(`${missingInMaster.length} IDSUBSLS di Muatan tidak ditemukan di Master`);
             missingInMaster.slice(0, 10).forEach(m => {
-                details.push(`  - ID ${m.id} (Muatan baris: ${m.rows.join(', ')})`);
+                const nama = m.nama ? ` (${m.nama})` : '';
+                details.push(`  - ${m.id}${nama}`);
             });
             if (missingInMaster.length > 10) {
                 details.push(`  ... dan ${missingInMaster.length - 10} ID lainnya`);
@@ -1683,35 +1698,36 @@
         
         return [newHeaders, ...newDataRows];
     }
-    
+        
     function generateErrorReport() {
         const v = validationResults;
         const errorData = [];
         
-        errorData.push(['JENIS', 'VARIABEL/ID', 'BARIS', 'NILAI', 'KETERANGAN']);
+        // Header: JENIS, VARIABEL, BARIS, NILAI, KETERANGAN
+        errorData.push(['JENIS', 'VARIABEL', 'BARIS', 'NILAI', 'KETERANGAN']);
         
-        // Master Check - Missing in Muatan
+        // Master Check - Missing in Muatan (ID ada di Master, tidak di Muatan)
         if (v.masterCheck.missingInMuatanDetails) {
             v.masterCheck.missingInMuatanDetails.forEach(m => {
                 errorData.push([
-                    'MASTER CHECK', 
-                    m.id, 
-                    m.rows.join(', '), 
-                    'Missing in Muatan',
-                    `IDSUBSLS ${m.id} ada di Master (baris ${m.rows.join(', ')}) tetapi tidak ditemukan di file Muatan`
+                    'MISSING IN MUATAN',
+                    m.id,
+                    '-',
+                    m.id,
+                    `IDSUBSLS ${m.id}${m.nama ? ' (' + m.nama + ')' : ''} ditemukan di Master tetapi tidak ada di file Muatan`
                 ]);
             });
         }
         
-        // Master Check - Missing in Master
+        // Master Check - Missing in Master (ID ada di Muatan, tidak di Master)
         if (v.masterCheck.missingInMasterDetails) {
             v.masterCheck.missingInMasterDetails.forEach(m => {
                 errorData.push([
-                    'MASTER CHECK', 
-                    m.id, 
-                    m.rows.join(', '), 
-                    'Missing in Master',
-                    `IDSUBSLS ${m.id} ada di Muatan (baris ${m.rows.join(', ')}) tetapi tidak ditemukan di file Master`
+                    'MISSING IN MASTER',
+                    m.id,
+                    m.rows.join(', '),
+                    m.id,
+                    `IDSUBSLS ${m.id}${m.nama ? ' (' + m.nama + ')' : ''} ditemukan di Muatan (baris ${m.rows.join(', ')}) tetapi tidak ada di file Master`
                 ]);
             });
         }
@@ -1720,11 +1736,11 @@
         if (v.masterCheck.duplicateInMasterDetails) {
             v.masterCheck.duplicateInMasterDetails.forEach(d => {
                 errorData.push([
-                    'MASTER DUPLIKAT', 
-                    d.id, 
-                    d.rows.join(', '), 
-                    `${d.count}x`,
-                    `ID ${d.id} muncul ${d.count} kali di Master pada baris ${d.rows.join(', ')}`
+                    'DUPLIKAT MASTER',
+                    d.id,
+                    d.rows.join(', '),
+                    d.id,
+                    `IDSUBSLS ${d.id}${d.nama ? ' (' + d.nama + ')' : ''} muncul ${d.count}x di Master`
                 ]);
             });
         }
@@ -1733,19 +1749,12 @@
         if (v.masterCheck.duplicateInMuatanDetails) {
             v.masterCheck.duplicateInMuatanDetails.forEach(d => {
                 errorData.push([
-                    'MUATAN DUPLIKAT', 
-                    d.id, 
-                    d.rows.join(', '), 
-                    `${d.count}x`,
-                    `ID ${d.id} muncul ${d.count} kali di Muatan pada baris ${d.rows.join(', ')}`
+                    'DUPLIKAT MUATAN',
+                    d.id,
+                    d.rows.join(', '),
+                    d.id,
+                    `IDSUBSLS ${d.id}${d.nama ? ' (' + d.nama + ')' : ''} muncul ${d.count}x di Muatan`
                 ]);
-            });
-        }
-        
-        // Master Check - Summary errors
-        if (v.masterCheck.errors && v.masterCheck.errors.length > 0) {
-            v.masterCheck.errors.forEach(err => {
-                errorData.push(['MASTER SUMMARY', '-', '-', '-', err]);
             });
         }
         
@@ -1808,7 +1817,7 @@
             ['RINGKASAN'],
             ['Kategori', 'Status', 'Error', 'Warning'],
             ['Kode Kabupaten', v.kodeCheck.passed ? 'LOLOS' : 'GAGAL', v.kodeCheck.errors.length, '-'],
-            ['File Muatan', v.fileCheck.passed ? 'LOLOS' : 'GAGAL', v.fileCheck.errors.length, '-'],
+            ['File', v.fileCheck.passed ? 'LOLOS' : 'GAGAL', v.fileCheck.errors.length, '-'],
             ['Master Sub SLS', v.masterCheck.passed ? 'LOLOS' : 'GAGAL', v.masterCheck.errors.length, '-'],
             ['Variabel', v.varCheck.passed ? 'LOLOS' : 'GAGAL', v.varCheck.errors.length, v.varCheck.warnings.length],
             ['Tipe Data', v.typeCheck.passed ? 'LOLOS' : 'GAGAL', v.typeCheck.errors.length, '-'],
