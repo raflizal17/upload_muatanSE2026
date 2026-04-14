@@ -1703,15 +1703,15 @@
         const v = validationResults;
         const errorData = [];
         
-        // Header: JENIS, VARIABEL, BARIS, NILAI, KETERANGAN
+        // Header
         errorData.push(['JENIS', 'VARIABEL', 'BARIS', 'NILAI', 'KETERANGAN']);
         
         // Master Check - Missing in Muatan (ID ada di Master, tidak di Muatan)
         if (v.masterCheck.missingInMuatanDetails) {
             v.masterCheck.missingInMuatanDetails.forEach(m => {
                 errorData.push([
+                    'MASTER CHECK',
                     'MISSING IN MUATAN',
-                    m.id,
                     '-',
                     m.id,
                     `IDSUBSLS ${m.id}${m.nama ? ' (' + m.nama + ')' : ''} ditemukan di Master tetapi tidak ada di file Muatan`
@@ -1723,8 +1723,8 @@
         if (v.masterCheck.missingInMasterDetails) {
             v.masterCheck.missingInMasterDetails.forEach(m => {
                 errorData.push([
+                    'MASTER CHECK',
                     'MISSING IN MASTER',
-                    m.id,
                     m.rows.join(', '),
                     m.id,
                     `IDSUBSLS ${m.id}${m.nama ? ' (' + m.nama + ')' : ''} ditemukan di Muatan (baris ${m.rows.join(', ')}) tetapi tidak ada di file Master`
@@ -1736,8 +1736,8 @@
         if (v.masterCheck.duplicateInMasterDetails) {
             v.masterCheck.duplicateInMasterDetails.forEach(d => {
                 errorData.push([
-                    'DUPLIKAT MASTER',
-                    d.id,
+                    'MASTER CHECK',
+                    'DUPLIKAT DI MASTER',
                     d.rows.join(', '),
                     d.id,
                     `IDSUBSLS ${d.id}${d.nama ? ' (' + d.nama + ')' : ''} muncul ${d.count}x di Master`
@@ -1749,8 +1749,8 @@
         if (v.masterCheck.duplicateInMuatanDetails) {
             v.masterCheck.duplicateInMuatanDetails.forEach(d => {
                 errorData.push([
-                    'DUPLIKAT MUATAN',
-                    d.id,
+                    'MASTER CHECK',
+                    'DUPLIKAT DI MUATAN',
                     d.rows.join(', '),
                     d.id,
                     `IDSUBSLS ${d.id}${d.nama ? ' (' + d.nama + ')' : ''} muncul ${d.count}x di Muatan`
@@ -1918,12 +1918,21 @@
             anomalyHtml += `<div class="result-item error"><strong>❌ Error Anomali (${v.anomalyCheck.errorCount} baris data - harus diperbaiki):</strong><br>${v.anomalyCheck.errors.join('<br>')}</div>`;
         }
         if (v.anomalyCheck.detailWarnings && v.anomalyCheck.detailWarnings.length) {
-            anomalyHtml += `<div class="result-item warning"><strong>⚠️ Warning Anomali (${v.anomalyCheck.warningCount} baris data - opsional diperbaiki):</strong><br>${v.anomalyCheck.detailWarnings.join('<br>')}</div>`;
+            // Tampilkan maksimal 5 warning
+            const displayWarnings = v.anomalyCheck.detailWarnings.slice(0, 5);
+            anomalyHtml += `<div class="result-item warning"><strong>⚠️ Warning Anomali (${v.anomalyCheck.warningCount} baris data - opsional diperbaiki):</strong><br>${displayWarnings.join('<br>')}</div>`;
+            
+            // Jika ada lebih dari 5, tampilkan "... dan X warning lainnya"
+            if (v.anomalyCheck.warningCount > 5) {
+                anomalyHtml += `<div class="result-item warning" style="margin-top: -5px;"><em>... dan ${v.anomalyCheck.warningCount - 5} warning lainnya</em></div>`;
+            }
         }
         if (v.anomalyCheck.details && v.anomalyCheck.details.length) {
             const showDetails = v.anomalyCheck.details.slice(0, 5);
             anomalyHtml += `<div class="result-item error"><strong>Detail Baris yang Error:</strong><br>${showDetails.join('<br>')}</div>`;
-            if (v.anomalyCheck.details.length > 5) anomalyHtml += `<div>... dan ${v.anomalyCheck.details.length - 5} error lainnya</div>`;
+            if (v.anomalyCheck.details.length > 5) {
+                anomalyHtml += `<div class="result-item error" style="margin-top: -5px;"><em>... dan ${v.anomalyCheck.details.length - 5} error lainnya</em></div>`;
+            }
         }
         if (v.anomalyCheck.passed) {
             if (v.anomalyCheck.warningCount > 0) {
