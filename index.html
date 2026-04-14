@@ -419,6 +419,13 @@
             text-align: center;
         }
         
+        .master-hint {
+            font-size: 13px;
+            color: #b95b0a;
+            margin-top: 5px;
+            font-weight: 500;
+        }
+        
         footer {
             text-align: center;
             margin-top: 30px;
@@ -444,12 +451,14 @@
     </div>
     
     <div class="instruction-note">
-        <strong>Format File:</strong> Nama file harus <code>{idkab}_muatan.csv</code> atau <code>{idkab}_muatan.xlsx</code> (contoh: <code>1101_muatan.csv</code>)<br>
+        <strong>Format File:</strong><br>
+        • File Muatan: <code>{idkab}_muatan.csv</code> atau <code>{idkab}_muatan.xlsx</code> (contoh: <code>1101_muatan.csv</code>)<br>
+        • File Master: <code>msubsls_261_{idkab}.csv</code> atau <code>msubsls_261_{idkab}.xlsx</code> (contoh: <code>msubsls_261_1101.csv</code>)<br>
         <strong>Format Default:</strong> File CSV dengan Delimiter koma (,) dan string dengan tanda petik (")
     </div>
     
     <div class="form-section">
-        <h2>Upload File Muatan</h2>
+        <h2>Upload File Muatan dan Master</h2>
         
         <div class="input-group">
             <label for="kodeKabInput">Kode Kabupaten/Kota</label>
@@ -460,7 +469,17 @@
         </div>
         
         <div class="input-group">
-            <label for="muatanFile">File Hasil Pengolahan Muatan (CSV | Excel)</label>
+            <label for="masterFile">File Master Sub SLS (msubsls_261_{idkab}.csv | .xlsx)</label>
+            <input type="file" id="masterFile" accept=".csv,.xlsx">
+            <div class="file-format-info">
+                <span class="format-badge">CSV (koma/pipe)</span>
+                <span class="format-badge">Excel .xlsx</span>
+            </div>
+            <div class="master-hint" id="masterHint"></div>
+        </div>
+        
+        <div class="input-group">
+            <label for="muatanFile">File Hasil Pengolahan Muatan ({idkab}_muatan.csv | .xlsx)</label>
             <input type="file" id="muatanFile" accept=".csv,.xlsx">
             <div class="file-format-info">
                 <span class="format-badge">CSV (koma/pipe)</span>
@@ -512,6 +531,11 @@
         <div class="result-box" id="fileCheckResult">
             <h3 style="margin-bottom: 15px;">Pengecekan File</h3>
             <div id="fileCheckDetails"></div>
+        </div>
+        
+        <div class="result-box" id="masterCheckResult">
+            <h3 style="margin-bottom: 15px;">Pengecekan Kesesuaian Master</h3>
+            <div id="masterCheckDetails"></div>
         </div>
         
         <div class="result-box" id="variableCheckResult">
@@ -1119,6 +1143,7 @@
     
     // Global variables
     let originalData = null;
+    let masterData = null;
     let correctedData = null;
     let validationPassed = false;
     let selectedKodeKab = '';
@@ -1129,6 +1154,7 @@
     let validationResults = {
         kodeCheck: { passed: false, errors: [] },
         fileCheck: { passed: false, errors: [] },
+        masterCheck: { passed: false, errors: [], warnings: [], details: [] },
         varCheck: { passed: false, errors: [], warnings: [] },
         typeCheck: { passed: false, errors: [], warnings: [], details: [] },
         anomalyCheck: { passed: true, errors: [], warnings: [], details: [], detailWarnings: [], errorCount: 0, warningCount: 0 }
@@ -1155,8 +1181,13 @@
         return ext === 'csv' ? 'csv' : 'excel';
     }
     
-    function extractKodeKabFromFilename(filename) {
-        const match = filename.match(/^(\d{4})_muatan/i);
+    function extractKodeKabFromFilename(filename, pattern = /^(\d{4})_muatan/i) {
+        const match = filename.match(pattern);
+        return match ? match[1] : null;
+    }
+    
+    function extractKodeKabFromMasterFilename(filename) {
+        const match = filename.match(/^msubsls_261_(\d{4})/i);
         return match ? match[1] : null;
     }
     
@@ -1222,20 +1253,205 @@
         return { passed: errors.length === 0, errors, kodeKab };
     }
     
-    function validateFileName(file, inputKodeKab) {
-        const fileKodeKab = extractKodeKabFromFilename(file.name);
+    function validateMasterFileName(file, inputKodeKab) {
+        const fileKodeKab = extractKodeKabFromMasterFilename(file.name);
         const errors = [];
-        const warnings = [];
         
         if (!fileKodeKab) {
-            errors.push('Nama file harus berformat {idkab}_muatan.csv atau {idkab}_muatan.xlsx');
+            errors.push('Nama file master harus berformat msubsls_261_{idkab}.csv atau .xlsx');
         } else if (!/^\d{4}$/.test(fileKodeKab)) {
-            errors.push('Kode kabupaten dalam nama file harus 4 digit angka');
+            errors.push('Kode kabupaten dalam nama file master harus 4 digit angka');
         } else if (fileKodeKab !== inputKodeKab) {
-            errors.push(`Kode pada file (${fileKodeKab}) tidak cocok dengan yang dipilih (${inputKodeKab})`);
+            errors.push(`Kode pada file master (${fileKodeKab}) tidak cocok dengan yang dipilih (${inputKodeKab})`);
         }
         
-        return { passed: errors.length === 0, errors, warnings, fileKodeKab };
+        return { passed: errors.length === 0, errors, fileKodeKab };
+    }
+    
+    function validateMuatanFileName(file, inputKodeKab) {
+        const fileKodeKab = extractKodeKabFromFilename(file.name, /^(\d{4})_muatan/i);
+        const errors = [];
+        
+        if (!fileKodeKab) {
+            errors.push('Nama file muatan harus berformat {idkab}_muatan.csv atau {idkab}_muatan.xlsx');
+        } else if (!/^\d{4}$/.test(fileKodeKab)) {
+            errors.push('Kode kabupaten dalam nama file muatan harus 4 digit angka');
+        } else if (fileKodeKab !== inputKodeKab) {
+            errors.push(`Kode pada file muatan (${fileKodeKab}) tidak cocok dengan yang dipilih (${inputKodeKab})`);
+        }
+        
+        return { passed: errors.length === 0, errors, fileKodeKab };
+    }
+    
+    function validateMasterCompleteness(masterData, muatanData) {
+        const errors = [];
+        const warnings = [];
+        const details = [];
+        
+        if (!masterData || masterData.length < 2) {
+            errors.push('File master kosong atau tidak valid');
+            return { passed: false, errors, warnings, details, missingInMasterDetails: [], missingInMuatanDetails: [] };
+        }
+        
+        if (!muatanData || muatanData.length < 2) {
+            errors.push('File muatan kosong atau tidak valid');
+            return { passed: false, errors, warnings, details, missingInMasterDetails: [], missingInMuatanDetails: [] };
+        }
+        
+        // Cari kolom idsubsls di master
+        const masterHeaders = masterData[0];
+        let masterIdIndex = masterHeaders.indexOf('idsubsls');
+        if (masterIdIndex === -1) {
+            masterIdIndex = masterHeaders.indexOf('idsubsls_261');
+        }
+        if (masterIdIndex === -1) {
+            masterIdIndex = 0; // Asumsikan kolom pertama
+        }
+        
+        // Cari kolom idsubsls_261 di muatan
+        const muatanHeaders = muatanData[0];
+        const muatanIdIndex = muatanHeaders.indexOf('idsubsls_261');
+        
+        if (muatanIdIndex === -1) {
+            errors.push('Kolom idsubsls_261 tidak ditemukan di file muatan');
+            return { passed: false, errors, warnings, details, missingInMasterDetails: [], missingInMuatanDetails: [] };
+        }
+        
+        // Kumpulkan data ID dari master (dengan info baris)
+        const masterIdMap = new Map(); // id -> [baris]
+        for (let i = 1; i < masterData.length; i++) {
+            const row = masterData[i];
+            if (row.length > masterIdIndex) {
+                let id = row[masterIdIndex];
+                if (id) {
+                    id = String(id).trim();
+                    if (id.length === 16) {
+                        if (!masterIdMap.has(id)) {
+                            masterIdMap.set(id, []);
+                        }
+                        masterIdMap.get(id).push(i + 1);
+                    }
+                }
+            }
+        }
+        
+        // Kumpulkan data ID dari muatan (dengan info baris)
+        const muatanIdMap = new Map(); // id -> [baris]
+        for (let i = 1; i < muatanData.length; i++) {
+            const row = muatanData[i];
+            if (row.length > muatanIdIndex) {
+                let id = row[muatanIdIndex];
+                if (id) {
+                    id = String(id).trim();
+                    if (id.length === 16) {
+                        if (!muatanIdMap.has(id)) {
+                            muatanIdMap.set(id, []);
+                        }
+                        muatanIdMap.get(id).push(i + 1);
+                    }
+                }
+            }
+        }
+        
+        const masterIds = new Set(masterIdMap.keys());
+        const muatanIds = new Set(muatanIdMap.keys());
+        
+        // Cek duplikat
+        const duplicateInMaster = [];
+        const duplicateInMuatan = [];
+        
+        masterIdMap.forEach((rows, id) => {
+            if (rows.length > 1) {
+                duplicateInMaster.push({ id, rows, count: rows.length });
+            }
+        });
+        
+        muatanIdMap.forEach((rows, id) => {
+            if (rows.length > 1) {
+                duplicateInMuatan.push({ id, rows, count: rows.length });
+            }
+        });
+        
+        // Cek missing
+        const missingInMuatan = [];
+        const missingInMaster = [];
+        
+        masterIds.forEach(id => {
+            if (!muatanIds.has(id)) {
+                const rows = masterIdMap.get(id) || [];
+                missingInMuatan.push({ id, rows });
+            }
+        });
+        
+        muatanIds.forEach(id => {
+            if (!masterIds.has(id)) {
+                const rows = muatanIdMap.get(id) || [];
+                missingInMaster.push({ id, rows });
+            }
+        });
+        
+        // Buat detail untuk display
+        details.push(`Total IDSUBSLS di Master: ${masterIds.size}`);
+        details.push(`Total IDSUBSLS di Muatan: ${muatanIds.size}`);
+        details.push(`IDSUBSLS yang cocok: ${masterIds.size - missingInMuatan.length}`);
+        
+        // Buat pesan error
+        if (duplicateInMaster.length > 0) {
+            errors.push(`Duplikat di Master: ${duplicateInMaster.length} ID`);
+            duplicateInMaster.slice(0, 5).forEach(d => {
+                details.push(`  - ID ${d.id} muncul ${d.count}x di baris: ${d.rows.join(', ')}`);
+            });
+            if (duplicateInMaster.length > 5) {
+                details.push(`  ... dan ${duplicateInMaster.length - 5} duplikat lainnya`);
+            }
+        }
+        
+        if (duplicateInMuatan.length > 0) {
+            errors.push(`Duplikat di Muatan: ${duplicateInMuatan.length} ID`);
+            duplicateInMuatan.slice(0, 5).forEach(d => {
+                details.push(`  - ID ${d.id} muncul ${d.count}x di baris: ${d.rows.join(', ')}`);
+            });
+            if (duplicateInMuatan.length > 5) {
+                details.push(`  ... dan ${duplicateInMuatan.length - 5} duplikat lainnya`);
+            }
+        }
+        
+        if (missingInMuatan.length > 0) {
+            errors.push(`${missingInMuatan.length} IDSUBSLS di Master tidak ditemukan di Muatan`);
+            missingInMuatan.slice(0, 10).forEach(m => {
+                details.push(`  - ID ${m.id} (Master baris: ${m.rows.join(', ')})`);
+            });
+            if (missingInMuatan.length > 10) {
+                details.push(`  ... dan ${missingInMuatan.length - 10} ID lainnya`);
+            }
+        }
+        
+        if (missingInMaster.length > 0) {
+            errors.push(`${missingInMaster.length} IDSUBSLS di Muatan tidak ditemukan di Master`);
+            missingInMaster.slice(0, 10).forEach(m => {
+                details.push(`  - ID ${m.id} (Muatan baris: ${m.rows.join(', ')})`);
+            });
+            if (missingInMaster.length > 10) {
+                details.push(`  ... dan ${missingInMaster.length - 10} ID lainnya`);
+            }
+        }
+        
+        const passed = missingInMuatan.length === 0 && missingInMaster.length === 0 && 
+                       duplicateInMaster.length === 0 && duplicateInMuatan.length === 0;
+        
+        return { 
+            passed, 
+            errors, 
+            warnings, 
+            details,
+            masterCount: masterIds.size,
+            muatanCount: muatanIds.size,
+            matchCount: masterIds.size - missingInMuatan.length,
+            missingInMasterDetails: missingInMaster,
+            missingInMuatanDetails: missingInMuatan,
+            duplicateInMasterDetails: duplicateInMaster,
+            duplicateInMuatanDetails: duplicateInMuatan
+        };
     }
     
     function validateVariables(jsonData) {
@@ -1353,7 +1569,7 @@
         const errors = [];
         const warnings = [];
         const detailErrors = [];
-        const detailWarnings = [];  // <-- Array baru untuk detail warning
+        const detailWarnings = [];
         
         if (!jsonData || jsonData.length < 2) {
             return { passed: true, errors, warnings, details: [], detailWarnings: [], errorCount: 0, warningCount: 0 };
@@ -1397,7 +1613,7 @@
             }
             
             if (usaha > (kk + btt)) {
-                detailWarnings.push(`Baris ${rowNum}: usaha (${usaha}) > kk + btt (${kk + btt}) - Pastikan kembali data`);  // <-- Simpan ke detailWarnings
+                detailWarnings.push(`Baris ${rowNum}: usaha (${usaha}) > kk + btt (${kk + btt}) - Pastikan kembali data`);
                 rowHasWarning = true;
             }
             
@@ -1408,24 +1624,18 @@
         const errorCount = errorRows.size;
         const warningCount = warningRows.size;
         
-        // Summary errors (hanya untuk ditampilkan)
         if (errorCount > 0) {
             errors.push(`Ditemukan ${errorCount} baris data dengan anomali (error)`);
         }
         
-        // Summary warnings (hanya untuk ditampilkan)
         if (warningCount > 0) {
             warnings.push(`Ditemukan ${warningCount} baris data dengan anomali (warning)`);
         }
         
         return { 
             passed: errorCount === 0,
-            errors,                    // Summary errors
-            warnings,                  // Summary warnings (untuk display)
-            details: detailErrors,     // Detail errors
-            detailWarnings: detailWarnings,  // Detail warnings (untuk Excel)
-            errorCount, 
-            warningCount
+            errors, warnings, details: detailErrors, detailWarnings,
+            errorCount, warningCount
         };
     }
     
@@ -1474,13 +1684,70 @@
         return [newHeaders, ...newDataRows];
     }
     
-    // ==================== ERROR REPORT FUNCTIONS ====================
     function generateErrorReport() {
         const v = validationResults;
         const errorData = [];
         
-        // Header
-        errorData.push(['JENIS', 'VARIABEL', 'BARIS', 'NILAI', 'KETERANGAN']);
+        errorData.push(['JENIS', 'VARIABEL/ID', 'BARIS', 'NILAI', 'KETERANGAN']);
+        
+        // Master Check - Missing in Muatan
+        if (v.masterCheck.missingInMuatanDetails) {
+            v.masterCheck.missingInMuatanDetails.forEach(m => {
+                errorData.push([
+                    'MASTER CHECK', 
+                    m.id, 
+                    m.rows.join(', '), 
+                    'Missing in Muatan',
+                    `IDSUBSLS ${m.id} ada di Master (baris ${m.rows.join(', ')}) tetapi tidak ditemukan di file Muatan`
+                ]);
+            });
+        }
+        
+        // Master Check - Missing in Master
+        if (v.masterCheck.missingInMasterDetails) {
+            v.masterCheck.missingInMasterDetails.forEach(m => {
+                errorData.push([
+                    'MASTER CHECK', 
+                    m.id, 
+                    m.rows.join(', '), 
+                    'Missing in Master',
+                    `IDSUBSLS ${m.id} ada di Muatan (baris ${m.rows.join(', ')}) tetapi tidak ditemukan di file Master`
+                ]);
+            });
+        }
+        
+        // Master Check - Duplikat di Master
+        if (v.masterCheck.duplicateInMasterDetails) {
+            v.masterCheck.duplicateInMasterDetails.forEach(d => {
+                errorData.push([
+                    'MASTER DUPLIKAT', 
+                    d.id, 
+                    d.rows.join(', '), 
+                    `${d.count}x`,
+                    `ID ${d.id} muncul ${d.count} kali di Master pada baris ${d.rows.join(', ')}`
+                ]);
+            });
+        }
+        
+        // Master Check - Duplikat di Muatan
+        if (v.masterCheck.duplicateInMuatanDetails) {
+            v.masterCheck.duplicateInMuatanDetails.forEach(d => {
+                errorData.push([
+                    'MUATAN DUPLIKAT', 
+                    d.id, 
+                    d.rows.join(', '), 
+                    `${d.count}x`,
+                    `ID ${d.id} muncul ${d.count} kali di Muatan pada baris ${d.rows.join(', ')}`
+                ]);
+            });
+        }
+        
+        // Master Check - Summary errors
+        if (v.masterCheck.errors && v.masterCheck.errors.length > 0) {
+            v.masterCheck.errors.forEach(err => {
+                errorData.push(['MASTER SUMMARY', '-', '-', '-', err]);
+            });
+        }
         
         // Error Tipe Data
         if (v.typeCheck.details) {
@@ -1506,25 +1773,22 @@
             });
         }
         
-        // Warning Anomali - gunakan detailWarnings, bukan warnings
+        // Warning Anomali
         if (v.anomalyCheck.detailWarnings) {
             v.anomalyCheck.detailWarnings.forEach(warn => {
                 const match = warn.match(/Baris (\d+): (\w+) \((\d+)\) > (\w+) \+ (\w+) \((\d+)\)/);
                 if (match) {
                     errorData.push(['ANOMALI WARNING', match[2], match[1], `${match[3]} > ${match[6]}`, warn]);
                 } else {
-                    // Fallback jika regex tidak cocok
                     errorData.push(['ANOMALI WARNING', '-', '-', '-', warn]);
                 }
             });
         }
         
-        // Error Variabel
+        // Error Variabel, File, Kode
         if (v.varCheck.errors) {
             v.varCheck.errors.forEach(err => errorData.push(['VARIABEL', '-', '-', '-', err]));
         }
-        
-        // Error File & Kode
         if (v.fileCheck.errors) {
             v.fileCheck.errors.forEach(err => errorData.push(['FILE', '-', '-', '-', err]));
         }
@@ -1537,16 +1801,25 @@
             ['LAPORAN ERROR & WARNING - VALIDASI MUATAN SE2026'],
             [''],
             ['Kode Kabupaten:', selectedKodeKab || '-'],
-            ['Nama File:', document.getElementById('muatanFile')?.files[0]?.name || '-'],
+            ['File Muatan:', document.getElementById('muatanFile')?.files[0]?.name || '-'],
+            ['File Master:', document.getElementById('masterFile')?.files[0]?.name || '-'],
             ['Waktu Validasi:', new Date().toLocaleString('id-ID')],
             [''],
             ['RINGKASAN'],
             ['Kategori', 'Status', 'Error', 'Warning'],
             ['Kode Kabupaten', v.kodeCheck.passed ? 'LOLOS' : 'GAGAL', v.kodeCheck.errors.length, '-'],
-            ['File', v.fileCheck.passed ? 'LOLOS' : 'GAGAL', v.fileCheck.errors.length, '-'],
+            ['File Muatan', v.fileCheck.passed ? 'LOLOS' : 'GAGAL', v.fileCheck.errors.length, '-'],
+            ['Master Sub SLS', v.masterCheck.passed ? 'LOLOS' : 'GAGAL', v.masterCheck.errors.length, '-'],
             ['Variabel', v.varCheck.passed ? 'LOLOS' : 'GAGAL', v.varCheck.errors.length, v.varCheck.warnings.length],
             ['Tipe Data', v.typeCheck.passed ? 'LOLOS' : 'GAGAL', v.typeCheck.errors.length, '-'],
             ['Anomali', v.anomalyCheck.passed ? 'LOLOS' : 'GAGAL', v.anomalyCheck.errorCount || 0, v.anomalyCheck.warningCount || 0],
+            [''],
+            ['MASTER CHECK - RINCIAN:'],
+            ['Total ID Master:', v.masterCheck.masterCount || 0],
+            ['Total ID Muatan:', v.masterCheck.muatanCount || 0],
+            ['ID Cocok:', v.masterCheck.matchCount || 0],
+            ['Missing di Muatan:', (v.masterCheck.missingInMuatanDetails || []).length],
+            ['Missing di Master:', (v.masterCheck.missingInMasterDetails || []).length],
             [''],
             ['TOTAL BARIS ERROR:', v.anomalyCheck.errorCount || 0],
             ['TOTAL BARIS WARNING:', v.anomalyCheck.warningCount || 0]
@@ -1586,6 +1859,7 @@
         const summaryHtml = `
             <div class="summary-card ${v.kodeCheck.passed ? 'success' : 'error'}"><div class="number">${v.kodeCheck.passed ? '✓' : '✗'}</div><div class="label">Kode Kab</div></div>
             <div class="summary-card ${v.fileCheck.passed ? 'success' : 'error'}"><div class="number">${v.fileCheck.passed ? '✓' : '✗'}</div><div class="label">File</div></div>
+            <div class="summary-card ${v.masterCheck.passed ? 'success' : 'error'}"><div class="number">${v.masterCheck.passed ? '✓' : '✗'}</div><div class="label">Master</div></div>
             <div class="summary-card ${v.varCheck.passed ? 'success' : 'error'}"><div class="number">${v.varCheck.passed ? '✓' : '✗'}</div><div class="label">Variabel</div></div>
             <div class="summary-card ${v.typeCheck.passed ? 'success' : 'error'}"><div class="number">${v.typeCheck.passed ? '✓' : '✗'}</div><div class="label">Tipe Data</div></div>
             <div class="summary-card ${v.anomalyCheck.passed ? 'success' : 'error'}"><div class="number">${v.anomalyCheck.passed ? '✓' : '✗'}</div><div class="label">Anomali</div></div>
@@ -1595,9 +1869,22 @@
         // File check
         let fileHtml = '';
         if (v.kodeCheck.errors.length) fileHtml += `<div class="result-item error"><strong>Error Kode:</strong><br>${v.kodeCheck.errors.join('<br>')}</div>`;
-        if (v.fileCheck.errors.length) fileHtml += `<div class="result-item error"><strong>Error File:</strong><br>${v.fileCheck.errors.join('<br>')}</div>`;
-        if (v.kodeCheck.passed && v.fileCheck.passed) fileHtml += `<div class="result-item success">✓ Format file dan kode kabupaten sesuai (${selectedKodeKab})</div>`;
+        if (v.fileCheck.errors.length) fileHtml += `<div class="result-item error"><strong>Error File Muatan:</strong><br>${v.fileCheck.errors.join('<br>')}</div>`;
+        if (v.kodeCheck.passed && v.fileCheck.passed) fileHtml += `<div class="result-item success">✓ Format file muatan dan kode kabupaten sesuai (${selectedKodeKab})</div>`;
         document.getElementById('fileCheckDetails').innerHTML = fileHtml;
+        
+        // Master check
+        let masterHtml = '';
+        if (v.masterCheck.errors.length) {
+            masterHtml += `<div class="result-item error"><strong>Error Master:</strong><br>${v.masterCheck.errors.join('<br>')}</div>`;
+        }
+        if (v.masterCheck.details && v.masterCheck.details.length) {
+            masterHtml += `<div class="result-item info"><strong>Detail Master:</strong><br>${v.masterCheck.details.join('<br>')}</div>`;
+        }
+        if (v.masterCheck.passed) {
+            masterHtml += `<div class="result-item success">✓ File master sesuai (one-to-one dengan file muatan)</div>`;
+        }
+        document.getElementById('masterCheckDetails').innerHTML = masterHtml;
         
         // Variable check
         let varHtml = '';
@@ -1616,7 +1903,7 @@
         }
         if (v.typeCheck.passed) typeHtml += `<div class="result-item success">✓ Semua tipe data dan panjang karakter sesuai</div>`;
         
-        // Anomaly check - gunakan detailWarnings untuk menampilkan detail
+        // Anomaly check
         let anomalyHtml = '';
         if (v.anomalyCheck.errors.length) {
             anomalyHtml += `<div class="result-item error"><strong>❌ Error Anomali (${v.anomalyCheck.errorCount} baris data - harus diperbaiki):</strong><br>${v.anomalyCheck.errors.join('<br>')}</div>`;
@@ -1641,8 +1928,9 @@
         document.getElementById('dataTypeCheckDetails').innerHTML = typeHtml;
         
         // Tampilkan tombol download error report jika ada error/warning
-        const hasErrors = !v.kodeCheck.passed || !v.fileCheck.passed || !v.varCheck.passed || 
-                          !v.typeCheck.passed || !v.anomalyCheck.passed || v.anomalyCheck.warningCount > 0;
+        const hasErrors = !v.kodeCheck.passed || !v.fileCheck.passed || !v.masterCheck.passed || 
+                          !v.varCheck.passed || !v.typeCheck.passed || !v.anomalyCheck.passed || 
+                          v.anomalyCheck.warningCount > 0;
         document.getElementById('errorDownloadSection').style.display = hasErrors ? 'block' : 'none';
         
         displayMetadata();
@@ -1682,14 +1970,17 @@
     
     // ==================== MAIN PROCESS ====================
     async function processFile() {
-        const fileInput = document.getElementById('muatanFile');
-        const file = fileInput.files[0];
+        const masterInput = document.getElementById('masterFile');
+        const muatanInput = document.getElementById('muatanFile');
+        const masterFile = masterInput.files[0];
+        const muatanFile = muatanInput.files[0];
         const delimiter = document.getElementById('delimiterSelect').value;
         const quoteChar = document.getElementById('quoteChar').value;
         
         validationResults = {
             kodeCheck: { passed: false, errors: [] },
             fileCheck: { passed: false, errors: [] },
+            masterCheck: { passed: false, errors: [], warnings: [], details: [] },
             varCheck: { passed: false, errors: [], warnings: [] },
             typeCheck: { passed: false, errors: [], warnings: [], details: [] },
             anomalyCheck: { passed: true, errors: [], warnings: [], details: [], detailWarnings: [], errorCount: 0, warningCount: 0 }
@@ -1698,36 +1989,57 @@
         const kodeCheck = validateKodeKabInput();
         validationResults.kodeCheck = kodeCheck;
         if (!kodeCheck.passed) { alert(kodeCheck.errors.join('\n')); return; }
-        if (!file) { alert('Silakan pilih file terlebih dahulu'); return; }
+        if (!masterFile) { alert('Silakan pilih file master terlebih dahulu'); return; }
+        if (!muatanFile) { alert('Silakan pilih file muatan terlebih dahulu'); return; }
         
         document.getElementById('loadingIndicator').style.display = 'block';
         document.getElementById('resultSection').style.display = 'none';
         document.getElementById('actionBox').style.display = 'none';
         document.getElementById('errorDownloadSection').style.display = 'none';
         document.getElementById('progressFill').style.width = '0%';
+        document.getElementById('loadingText').textContent = 'Memvalidasi file, harap tunggu...';
         
         try {
-            const fileCheck = validateFileName(file, selectedKodeKab);
-            validationResults.fileCheck = fileCheck;
-            document.getElementById('progressFill').style.width = '20%';
+            // Validate file names
+            const masterNameCheck = validateMasterFileName(masterFile, selectedKodeKab);
+            const muatanNameCheck = validateMuatanFileName(muatanFile, selectedKodeKab);
             
-            originalData = await parseFile(file, delimiter, quoteChar);
-            document.getElementById('progressFill').style.width = '40%';
+            const fileCheckPassed = masterNameCheck.passed && muatanNameCheck.passed;
+            const fileCheckErrors = [...masterNameCheck.errors, ...muatanNameCheck.errors];
+            validationResults.fileCheck = { passed: fileCheckPassed, errors: fileCheckErrors };
+            document.getElementById('progressFill').style.width = '15%';
             
-            const varCheck = validateVariables(originalData);
-            validationResults.varCheck = varCheck;
+            // Parse files
+            masterData = await parseFile(masterFile, delimiter, quoteChar);
+            document.getElementById('progressFill').style.width = '30%';
+            
+            originalData = await parseFile(muatanFile, delimiter, quoteChar);
+            document.getElementById('progressFill').style.width = '45%';
+            
+            // Validate master completeness
+            const masterCheck = validateMasterCompleteness(masterData, originalData);
+            validationResults.masterCheck = masterCheck;
             document.getElementById('progressFill').style.width = '60%';
             
+            // Validate variables
+            const varCheck = validateVariables(originalData);
+            validationResults.varCheck = varCheck;
+            document.getElementById('progressFill').style.width = '70%';
+            
+            // Correct data
             correctedData = correctData(originalData);
             
+            // Validate data types
             const typeCheck = validateDataTypes(correctedData);
             validationResults.typeCheck = typeCheck;
-            document.getElementById('progressFill').style.width = '80%';
+            document.getElementById('progressFill').style.width = '85%';
             
+            // Validate anomalies
             const anomalyCheck = validateAnomalies(correctedData);
             validationResults.anomalyCheck = anomalyCheck;
-            document.getElementById('progressFill').style.width = '90%';
+            document.getElementById('progressFill').style.width = '95%';
             
+            // Create blob for download
             const ws = XLSX.utils.aoa_to_sheet(correctedData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Validated');
@@ -1735,7 +2047,9 @@
                 { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
             
             document.getElementById('progressFill').style.width = '100%';
-            validationPassed = kodeCheck.passed && fileCheck.passed && varCheck.passed && typeCheck.passed && anomalyCheck.passed;
+            
+            validationPassed = kodeCheck.passed && fileCheckPassed && masterCheck.passed && 
+                               varCheck.passed && typeCheck.passed && anomalyCheck.passed;
             
             document.getElementById('loadingIndicator').style.display = 'none';
             document.getElementById('resultSection').style.display = 'block';
@@ -1749,6 +2063,7 @@
                 document.getElementById('uploadStatus').innerHTML = `<div class="result-box success">${msg} Silakan ikuti langkah di bawah ini.</div>`;
             } else {
                 let msg = '❌ Validasi GAGAL. Perbaiki error sebelum melanjutkan.';
+                if (!masterCheck.passed) msg += `<br><br>⚠️ File master tidak sesuai dengan file muatan.`;
                 if (!anomalyCheck.passed) msg += `<br><br>⚠️ Terdapat <strong>${anomalyCheck.errorCount} baris data</strong> dengan anomali yang harus diperbaiki.`;
                 if (anomalyCheck.warningCount > 0) msg += `<br><br>📝 Terdapat ${anomalyCheck.warningCount} baris warning (opsional).`;
                 document.getElementById('uploadStatus').innerHTML = `<div class="result-box error">${msg}</div>`;
@@ -1763,31 +2078,51 @@
     
     function resetForm() {
         $('#kodeKabInput').val('').trigger('change');
+        document.getElementById('masterFile').value = '';
         document.getElementById('muatanFile').value = '';
         document.getElementById('resultSection').style.display = 'none';
         document.getElementById('actionBox').style.display = 'none';
         document.getElementById('errorDownloadSection').style.display = 'none';
         document.getElementById('fileNameHint').innerHTML = '';
-        originalData = correctedData = null;
+        document.getElementById('masterHint').innerHTML = '';
+        originalData = masterData = correctedData = null;
         downloadBlob = null;
         validationPassed = false;
         selectedKodeKab = '';
     }
     
     // ==================== EVENT LISTENERS ====================
+    document.getElementById('masterFile').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const selectedKode = $('#kodeKabInput').val();
+        if (file) {
+            const fileKodeKab = extractKodeKabFromMasterFilename(file.name);
+            const hint = document.getElementById('masterHint');
+            if (fileKodeKab) {
+                hint.innerHTML = (selectedKode && fileKodeKab !== selectedKode) 
+                    ? `⚠️ Kode pada file master (${fileKodeKab}) tidak cocok dengan yang dipilih (${selectedKode})`
+                    : `✅ Kode master terdeteksi: <strong>${fileKodeKab}</strong>`;
+                hint.style.color = (selectedKode && fileKodeKab !== selectedKode) ? '#c23b22' : '#2c7a4d';
+            } else {
+                hint.innerHTML = `⚠️ Nama file master harus berformat msubsls_261_{idkab}.csv`;
+                hint.style.color = '#c23b22';
+            }
+        }
+    });
+    
     document.getElementById('muatanFile').addEventListener('change', function(e) {
         const file = e.target.files[0];
         const selectedKode = $('#kodeKabInput').val();
         if (file) {
-            const fileKodeKab = extractKodeKabFromFilename(file.name);
+            const fileKodeKab = extractKodeKabFromFilename(file.name, /^(\d{4})_muatan/i);
             const hint = document.getElementById('fileNameHint');
             if (fileKodeKab) {
                 hint.innerHTML = (selectedKode && fileKodeKab !== selectedKode) 
-                    ? `⚠️ Kode pada file (${fileKodeKab}) tidak cocok dengan yang dipilih (${selectedKode})`
-                    : `✅ Kode terdeteksi: <strong>${fileKodeKab}</strong>`;
+                    ? `⚠️ Kode pada file muatan (${fileKodeKab}) tidak cocok dengan yang dipilih (${selectedKode})`
+                    : `✅ Kode muatan terdeteksi: <strong>${fileKodeKab}</strong>`;
                 hint.style.color = (selectedKode && fileKodeKab !== selectedKode) ? '#c23b22' : '#2c7a4d';
             } else {
-                hint.innerHTML = `⚠️ Nama file harus berformat {idkab}_muatan.csv`;
+                hint.innerHTML = `⚠️ Nama file muatan harus berformat {idkab}_muatan.csv`;
                 hint.style.color = '#c23b22';
             }
         }
@@ -1795,14 +2130,27 @@
     
     $('#kodeKabInput').on('change', function() {
         const selectedKode = $(this).val();
-        const fileInput = document.getElementById('muatanFile');
-        if (fileInput.files[0]) {
-            const fileKodeKab = extractKodeKabFromFilename(fileInput.files[0].name);
+        
+        const masterFile = document.getElementById('masterFile').files[0];
+        if (masterFile) {
+            const fileKodeKab = extractKodeKabFromMasterFilename(masterFile.name);
+            const hint = document.getElementById('masterHint');
+            if (fileKodeKab) {
+                hint.innerHTML = (fileKodeKab !== selectedKode)
+                    ? `⚠️ Kode pada file master (${fileKodeKab}) tidak cocok dengan yang dipilih (${selectedKode})`
+                    : `✅ Kode master terdeteksi: <strong>${fileKodeKab}</strong>`;
+                hint.style.color = (fileKodeKab !== selectedKode) ? '#c23b22' : '#2c7a4d';
+            }
+        }
+        
+        const muatanFile = document.getElementById('muatanFile').files[0];
+        if (muatanFile) {
+            const fileKodeKab = extractKodeKabFromFilename(muatanFile.name, /^(\d{4})_muatan/i);
             const hint = document.getElementById('fileNameHint');
             if (fileKodeKab) {
                 hint.innerHTML = (fileKodeKab !== selectedKode)
-                    ? `⚠️ Kode pada file (${fileKodeKab}) tidak cocok dengan yang dipilih (${selectedKode})`
-                    : `✅ Kode terdeteksi: <strong>${fileKodeKab}</strong>`;
+                    ? `⚠️ Kode pada file muatan (${fileKodeKab}) tidak cocok dengan yang dipilih (${selectedKode})`
+                    : `✅ Kode muatan terdeteksi: <strong>${fileKodeKab}</strong>`;
                 hint.style.color = (fileKodeKab !== selectedKode) ? '#c23b22' : '#2c7a4d';
             }
         }
