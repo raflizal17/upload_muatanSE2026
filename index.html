@@ -1136,8 +1136,10 @@
         { variable: 'idsls', label: 'ID SLS', type: 'character', required: true, length: 14 },
         { variable: 'nmsls', label: 'Nama SLS', type: 'character', required: true, maxLength: 225 },
         { variable: 'kk', label: 'Perkiraan Jumlah Keluarga', type: 'integer', required: true },
-        { variable: 'btt', label: 'Jumlah Bangunan Tempat Tinggal', type: 'integer', required: true },
-        { variable: 'bku', label: 'Jumlah Bangunan Khusus Usaha', type: 'integer', required: true },
+        { variable: 'btt', label: 'Perkiraan Jumlah Bangunan Tempat Tinggal', type: 'integer', required: true },
+        { variable: 'bttk', label: 'Perkiraan Jumlah Bangunan Tempat Tinggal Kosong', type: 'integer', required: true },
+        { variable: 'bku', label: 'Perkiraan Jumlah Bangunan Khusus Usaha', type: 'integer', required: true },
+        { variable: 'bbtt_nonusaha', label: 'Perkiraan Jumlah Bangunan Bukan Tempat Tinggal Nonusaha', type: 'integer', required: true },
         { variable: 'usaha', label: 'Perkiraan Jumlah Usaha', type: 'integer', required: true }
     ];
     
@@ -1617,16 +1619,19 @@
             let rowHasError = false;
             let rowHasWarning = false;
             
+            // Anomali 1: btt tidak boleh lebih besar dari kk (ERROR)
             if (btt > kk) {
                 detailErrors.push(`Baris ${rowNum}: btt (${btt}) > kk (${kk}) - Bangunan tempat tinggal tidak boleh lebih banyak dari jumlah keluarga`);
                 rowHasError = true;
             }
             
+            // Anomali 2: bku tidak boleh lebih besar dari usaha (ERROR)
             if (bku > usaha) {
                 detailErrors.push(`Baris ${rowNum}: bku (${bku}) > usaha (${usaha}) - Bangunan usaha tidak boleh lebih banyak dari jumlah usaha`);
                 rowHasError = true;
             }
             
+            // Anomali 3: usaha tidak boleh lebih besar dari (kk + btt) - WARNING
             if (usaha > (kk + btt)) {
                 detailWarnings.push(`Baris ${rowNum}: usaha (${usaha}) > kk + btt (${kk + btt}) - Pastikan kembali data`);
                 rowHasWarning = true;
@@ -1899,7 +1904,7 @@
         let varHtml = '';
         if (v.varCheck.errors.length) varHtml += `<div class="result-item error"><strong>Error:</strong><br>${v.varCheck.errors.join('<br>')}</div>`;
         if (v.varCheck.warnings.length) varHtml += `<div class="result-item warning"><strong>Warning:</strong><br>${v.varCheck.warnings.join('<br>')}</div>`;
-        if (v.varCheck.passed) varHtml += `<div class="result-item success">✓ Semua 15 variabel wajib tersedia</div>`;
+        if (v.varCheck.passed) varHtml += `<div class="result-item success">✓ Semua 17 variabel wajib tersedia</div>`;
         document.getElementById('variableCheckDetails').innerHTML = varHtml;
         
         // Data type check
